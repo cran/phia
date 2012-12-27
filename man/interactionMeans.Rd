@@ -14,7 +14,7 @@ interactionMeans(model, factors=names(xlevels), slope=NULL, \dots)
   cex.legend=1, abbrev.levels=FALSE, type="b", pch=0:6, \dots)
 }
 \arguments{
-  \item{model}{fitted model. Currently supported classes are \code{"lm"}, \code{"glm"}, and \code{"mlm"}.}
+  \item{model}{fitted model. Currently supported classes are \code{"lm"}, \code{"glm"}, \code{"mlm"}, \code{lme}, and \code{mer} (excluding models fitted by \code{nlmer}).}
   \item{factors}{character vector with the names of interacting factors.  All the factors of the model are used by default; use \code{NULL} for calculating the overall mean.}
   \item{slope}{character vector with the names of the interacting covariates associated to the slope that will be represented; if it is \code{NULL} (the default value), the function will calculate adjusted mean values.}
   \item{x}{an object created by the function \code{interactionMeans}.}
@@ -34,10 +34,10 @@ This function calculates the adjusted values of the model for interactions betwe
 
 In multivariate linear models, the adjusted means or slopes are calculated separately for each column by default, but it is possible to define an intra-subjects design of factors across columns, and put all columns in one.  This may be defined by the argument \code{idata} passed down to \code{\link{testFactors}} (see \code{\link{Anova}} or \code{\link{linearHypothesis}} in package \pkg{car} for further details).  If such transformation is done, it is also possible to include the factors of the intra-subjects design in \code{factors}, for calculating their main effects or interactions. 
 
-The generic \code{plot} function creates matrices of interaction plots, with the main effects of each factor represented in the diagonal, and the interactions between each pair of factors in the rest of panels.  For multivariate models without intra-subjects design, a new device for each variable will be created.  The adjusted means of \code{glm} models are plotted on the scale of the link function, although the y-axis is labelled on the scale of the response (unless the link function had been forced in the calculation of the means).  If the interactions involve many factors, it may be convenient to plot each panel in a different device (with \code{multiple=FALSE}), or select a subset of factors to be plotted with the arguments \code{atx} and \code{traces}.  A panel will be plotted for each pair of factors defined by crossing these arguments; if the crossed factors are the same one, that panel will show its main effect.
+The generic \code{plot} function creates matrices of interaction plots, with the main effects of each factor represented in the diagonal, and the interactions between each pair of factors in the rest of panels.  For multivariate models without intra-subjects design, a new device for each variable will be created.  The adjusted means of generalized models (fitted with \code{glm} or \code{glmer}) are plotted on the scale of the link function, although the y-axis is labelled on the scale of the response (unless the link function had been forced in the calculation of the means).  If the interactions involve many factors, it may be convenient to plot each panel in a different device (with \code{multiple=FALSE}), or select a subset of factors to be plotted with the arguments \code{atx} and \code{traces}.  A panel will be plotted for each pair of factors defined by crossing these arguments; if the crossed factors are the same one, that panel will show its main effect.
 }
 \value{
-\code{interactionMeans} returns an object of class \code{"interactionMeans")}, that contains a data frame with the factor interactions and the means or slopes of the model adjusted to them, and some attributes used for plotting.
+\code{interactionMeans} returns an object of class \code{"interactionMeans"}, that contains a data frame with the factor interactions and the means or slopes of the model adjusted to them, and some attributes used for plotting.
 }
 \author{
 Helios De Rosario-Martinez, \email{helios.derosario@ibv.upv.es}

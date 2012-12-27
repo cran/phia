@@ -1,4 +1,47 @@
 ## AUXILIARY FUNCTIONS
+
+# addPredictorsToFrame() is used to include covariates in a data frame
+# of factor combinations
+addPredictorsToFrame <- function(factor.frame, numeric.predictors, term){
+	if (length(numeric.predictors) > 0){
+		# Repeat the numeric values along the rows of the between-subjects data frame
+		new.columns <- t(matrix(term$covariates,dimnames=list(numeric.predictors)))
+		if (nrow(factor.frame)>0){
+			as.data.frame(cbind(factor.frame,new.columns))
+		}else{
+			as.data.frame(new.columns)
+		}
+	}else{factor.frame}
+}
+
+# defineLHT() makes the first approximation to the Linear Hypothesis Matrix
+# If the model has predictors, define L according to the model formula
+defineLHT <- function(model,term,factor.frame){
+	if (nrow(factor.frame)){
+		rhf <- formula(terms(model))[c(1,3)]
+		L <- model.matrix(rhf, data=factor.frame)
+	# Otherwise, L is defined to just get the intercept
+	}else{
+		if (!attr(terms(model),"intercept")) stop("Null model (no predictors or intercept).")
+		L <- matrix(1,dimnames=list(NULL,"(Intercept)"))
+	}
+	# If the term to analyse is not the intercept,
+	# set to zero the rows of the model matrix unrelated to specified covariates
+	if (term$num.vars[1] != "(Intercept)"){
+		# This matrix tells what terms are affected by each variable
+		# We choose the rows for the variables in the selected term
+		terms.matrix <- attr(terms(model),"factors")[term$num.vars,,drop=F]
+		# Only the columns where all variables are present are of interest to us
+		affected.terms <- which(apply(terms.matrix,2,"all"))
+		# The attribute "assign" of the model matrix tells what coefficents are related to each term,
+		# and we use affected.terms to select the relevant coefficients
+		relevant.coefficients <- attr(getModelMatrix(model),"assign") %in% affected.terms
+		# Now set irrelevant rows to zero
+		L[,!relevant.coefficients] <- 0
+	}
+	return(L)
+}
+
 # checkFactors() is used to check consistency of level combinations in the
 # factors defined in levels, and convert them to numeric matrices
 checkFactors <- function(frame,factor.names,levels){
@@ -288,40 +331,10 @@ testFactors.mlm <- function(model,levels,covariates,terms.formula=~1,inherit.con
 testFactorsOnTerm.mlm <- function(model,term,numeric.predictors,between.frame,within.frame,lht,...){
 	# 1. Redefine model data frame
 	# Include columns with averages or user-defined values for the numeric predictors
-	if (length(numeric.predictors) > 0){
-		# Repeat the numeric values along the rows of the between-subjects data frame
-		new.columns <- t(matrix(term$covariates,dimnames=list(numeric.predictors)))
-		if (nrow(between.frame)>0){
-			between.frame <- as.data.frame(cbind(between.frame,new.columns))
-		}else{
-			between.frame <- as.data.frame(new.columns)
-		}
-	}
+	between.frame <- addPredictorsToFrame(between.frame, numeric.predictors, term)
 	
 	# 2. Preliminary definition of the Linear Hypothesis matrix (L)
-	# If the model has predictors, define L according to the model formula
-	if (nrow(between.frame)){
-		rhf <- paste(as.character(formula(model))[c(1,3)],collapse=" ")
-		L <- model.matrix(as.formula(rhf), data=between.frame)
-	# Otherwise, L is defined to just get the intercept
-	}else{
-		if (!attr(model$terms,"intercept")) stop("Null model (no predictors or intercept).")
-		L <- matrix(1,dimnames=list(NULL,"(Intercept)"))
-	}
-	# If the term to analyse is not the intercept,
-	# set to zero the rows of the model matrix unrelated to specified covariates
-	if (term$num.vars[1] != "(Intercept)"){
-		# This matrix tells what terms are affected by each variable
-		# We choose the rows for the variables in the selected term
-		terms.matrix <- attr(model$terms,"factors")[term$num.vars,,drop=F]
-		# Only the columns where all variables are present are of interest to us
-		affected.terms <- which(apply(terms.matrix,2,"all"))
-		# The attribute "assign" of the model matrix tells what coefficents are related to each term,
-		# and we use affected.terms to select the relevant coefficients
-		relevant.coefficients <- attr(model.matrix(model),"assign") %in% affected.terms
-		# Now set irrelevant rows to zero
-		L[,!relevant.coefficients] <- 0
-	}
+	L <- defineLHT(model,term,between.frame)
 	
 	# 3. Transformed Linear Hypothesis (L) and response transformation (P) matrices
 	if (length(term$between.factors > 0)){
@@ -353,13 +366,16 @@ testFactorsOnTerm.mlm <- function(model,term,numeric.predictors,between.frame,wi
 testFactors.default <- function(model,levels,covariates,terms.formula=~1,inherit.contrasts=FALSE,default.contrasts=c("contr.sum","contr.poly"),lht=TRUE,...){	
 
 	# 1. Make complete list of variables, and extract factors
-	predictors <- names(X <- model.frame(model)[-1])
-	are.factors <- if (length(predictors)>0) sapply(X,"is.factor") else logical()
+	mf <- getModelFrame(model)
+	X <- mf[-1]
+	predictor.classes <- attr(terms(mf),"dataClasses")[-1]
+	predictors <- names(predictor.classes)
+	are.factors <- (predictor.classes %in% c("factor","ordered"))
 	factor.names <- predictors[are.factors]
 	# Factor data frame, with appropriate contrasts
 	factor.frame <- expand.grid(lapply(X[are.factors],"levels"))
 	for (f in factor.names){
-		contrasts(factor.frame[[f]]) <- model$contrasts[[f]]
+		contrasts(factor.frame[[f]]) <- getContrasts(model)[[f]]
 	}
 	# Define contrasts of factors for testing (not necessarily the same as factor.frame)
 	# Copy the contrasts explicitly defined in the model frame
@@ -368,7 +384,7 @@ testFactors.default <- function(model,levels,covariates,terms.formula=~1,inherit
 	undefined.contrasts <- sapply(factor.contrasts,"is.null")
 	if (length(factor.contrasts)>0){
 		if (inherit.contrasts){
-			factor.contrasts[undefined.contrasts] <- model$contrasts[undefined.contrasts]
+			factor.contrasts[undefined.contrasts] <- getContrasts(model)[undefined.contrasts]
 		}else{
 			are.ordered <- sapply(factor.frame,"is.ordered")
 			factor.contrasts[undefined.contrasts & are.ordered] <- default.contrasts[2]
@@ -465,7 +481,7 @@ testFactors.default <- function(model,levels,covariates,terms.formula=~1,inherit
 	contrast.mat <- contrast.mat[names(contrast.mat) %in% user.variables]
 	not.orthogonal <- sapply(contrast.mat,function(x) any(as.logical(round(colSums(x),digits=getOption("digits")))))
 	if (any(not.orthogonal)) warning(paste("Contrasts are not orthogonal for factor(s):",paste(factor.names[not.orthogonal],collapse=",")))
-	result <- list(call=match.call(,sys.call(1L)),model.call=model$call,levels=levels,factor.contrasts=factor.contrasts,covariates=covariates,terms=test.result)
+	result <- list(call=match.call(,sys.call(1L)),model.call=getCall(model),levels=levels,factor.contrasts=factor.contrasts,covariates=covariates,terms=test.result)
 	class(result) <- "testFactors"
 	return(result)
 }
@@ -473,42 +489,11 @@ testFactors.default <- function(model,levels,covariates,terms.formula=~1,inherit
 testFactorsOnTerm.default <- function(model,term,numeric.predictors,factor.frame,lht,...){
 	# 1. Redefine model data frame
 	# Include columns with averages or user-defined values for the numeric predictors
-	if (length(numeric.predictors) > 0){
-		# Repeat the numeric values along the rows of the between-subjects data frame
-		new.columns <- t(matrix(term$covariates,dimnames=list(numeric.predictors)))
-		if (nrow(factor.frame)>0){
-			factor.frame <- as.data.frame(cbind(factor.frame,new.columns))
-		}else{
-			factor.frame <- as.data.frame(new.columns)
-		}
-	}
+	factor.frame <- addPredictorsToFrame(factor.frame, numeric.predictors, term)
 	
 	# 2. Preliminary definition of the Linear Hypothesis matrix (L)
-	# If the model has predictors, define L according to the model formula
-	if (nrow(factor.frame)){
-		rhf <- paste(as.character(formula(model))[c(1,3)],collapse=" ")
-		L <- model.matrix(as.formula(rhf), data=factor.frame)
-	# Otherwise, L is defined to just get the intercept
-	}else{
-		if (!attr(terms(model),"intercept")) stop("Null model (no predictors or intercept).")
-		L <- matrix(1,dimnames=list(NULL,"(Intercept)"))
-	}
+	L <- defineLHT(model,term,factor.frame)
 
-	# If the term to analyse is not the intercept,
-	# set to zero the rows of the model matrix unrelated to specified covariates
-	if (term$num.vars[1] != "(Intercept)"){
-		# This matrix tells what terms are affected by each variable
-		# We choose the rows for the variables in the selected term
-		terms.matrix <- attr(terms(model),"factors")[term$num.vars,,drop=F]
-		# Only the columns where all variables are present are of interest to us
-		affected.terms <- which(apply(terms.matrix,2,"all"))
-		# The attribute "assign" of the model matrix tells what coefficents are related to each term,
-		# and we use affected.terms to select the relevant coefficients
-		relevant.coefficients <- attr(model.matrix(model),"assign") %in% affected.terms
-		# Now set irrelevant rows to zero
-		L[,!relevant.coefficients] <- 0
-	}
-	
 	# 3. Transformed Linear Hypothesis (L)
 	if (length(term$factor.names > 0)){
 		L <- makeT(factor.frame,term$factor.names,term$levels) %*% L
@@ -520,7 +505,7 @@ testFactorsOnTerm.default <- function(model,term,numeric.predictors,factor.frame
 	#   levels: numeric matrix values of levels
 	#   adjusted.values: table of adjusted means for the tested interactions
 	#   test: test value, from LinearHypothesis
-	adjusted.values <- L %*% coef(model)
+	adjusted.values <- L %*% getCoef(model)
 	result <- list(numeric.variables=paste(term$num.vars,sep=":"),factor.variables=term$fac.vars,hypothesis.matrix=L,adjusted.values=adjusted.values)
 	if (lht) result <- c(result,list(test=try(linearHypothesis(model,L,...),silent=TRUE)))
 	return(result)
@@ -539,9 +524,32 @@ testFactors.glm <- function(model, ..., link=FALSE){
 	attr(result,"means") <- if (link) "link" else "mean"
 	if (!link){
 		terms.with.means <- (lapply(result$terms,"[[","numeric.variables")=="(Intercept)")
-		for (term in which(terms.with.means)) result$terms[[term]]$adjusted.values <- family(model)$linkinv(result$terms[[term]]$adjusted.values)
+		for (term in which(terms.with.means)) result$terms[[term]]$adjusted.values <- getFamily(model)$linkinv(result$terms[[term]]$adjusted.values)
 	}
 	class(result) <- c("testFactors.glm","testFactors")
+	return(result)
+}
+
+## LME METHOD (equal to default, but with a result of a different class, just for summary purposes)
+testFactors.lme <- function(model, ...){
+	result <- testFactors.default(model,...)
+	class(result) <- c("testFactors.lme","testFactors")
+	return(result)
+}
+
+## MER METHOD (equal to default, but adjusted means are transformed if suitable)
+testFactors.mer <- function(model, ..., link=FALSE){
+	result <- testFactors.default(model,...)
+	if (isGLMM(model)){
+		attr(result,"means") <- if (link) "link" else "mean"
+		if (!link){
+			terms.with.means <- (lapply(result$terms,"[[","numeric.variables")=="(Intercept)")
+			for (term in which(terms.with.means)){
+				result$terms[[term]]$adjusted.values <- getFamily(model)$linkinv(result$terms[[term]]$adjusted.values)
+			}
+		}
+	}
+	class(result) <- c("testFactors.mer","testFactors")
 	return(result)
 }
 
@@ -693,16 +701,16 @@ summary.testFactors <- function(object,predictors=TRUE,matrices=TRUE,...){
 		# Create ANOVA table, copying values (Df, Chisq/F statistic, and P) from the test result
 		if (successful.tests[term.label]){
 			lht.result <- object$terms[[term.label]]$test
-			anova.table[term.label,1:3] <- as.matrix(lht.result[2,2:4])
+			anova.table[term.label,1:3] <- as.matrix(lht.result[2, seq(to=ncol(lht.result),length=3)])
 		}
 	}
 	sobject$adjusted.values <- adjusted.values
 	if (nrow(anova.table) > 0){
-		# Add a row with Df of the residual
-		anova.table <- rbind(anova.table,
-			Residual=c(lht.result[[2,1]],NA,NA))
-		colnames(anova.table) <- colnames(lht.result)[2:4]
-		anova.table <- structure(as.data.frame(anova.table), heading = paste(colnames(anova.table)[3], " Test: ", sep = ""), class = c("anova", "data.frame"))
+		# Add a row with Df of the residual if the information is available
+		if (ncol(lht.result) > 3) {anova.table <- rbind(anova.table, Residual=c(lht.result[[2,1]],NA,NA))}
+		colnames(anova.table) <- colnames(lht.result)[seq(to=ncol(lht.result),length=3)]
+		anova.table <- structure(as.data.frame(anova.table),
+			heading = paste(colnames(anova.table)[ncol(anova.table)-1], " Test: ", sep = ""), class = c("anova", "data.frame"))
 	}
     sobject$anova.table <- anova.table
 	class(sobject) <- "summary.testFactors"

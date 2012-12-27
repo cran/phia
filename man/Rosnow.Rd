@@ -3,7 +3,7 @@
 \docType{data}
 \title{Rosnow's and Rosenthal's Baseball Performance Data}
 \description{
-Contrived data set of an hypothetical study about the efficacy of a new training method for improving the performance of baseball players.  2x2 Factorial design with two factors: training method and expertise of the player.
+Contrived data set of an hypothetical study about the efficacy of a new training method for improving the performance of baseball players.  2x2 factorial design with two factors: training method and expertise of the player.
 }
 \usage{Rosnow}
 \format{

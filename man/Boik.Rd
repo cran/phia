@@ -9,8 +9,8 @@ Data set based on the hypothetical example used by R.J. Boik (1979) to explain t
 \format{
 A data frame with 72 observations and three columns:
 \describe{
-\item{\code{therapy}}{Fear reduction therapy. Factor with levels \code{a1} (control group), \code{a2}, \code{a3}.}
-\item{\code{medication}}{Dose of antianxiety medication. Ordered factor with levels \code{b1} (placebo), \code{b2}, \code{b3}, \code{b4}.}
+\item{\code{therapy}}{Fear reduction therapy. Factor with levels \code{control}, \code{T1}, \code{T2}.}
+\item{\code{medication}}{Dose of antianxiety medication. Ordered factor with levels \code{placebo}, \code{D1}, \code{D2}, \code{D3}.}
 \item{\code{edr}}{Electrodermal response (in arbitrary units).}
 }
 }

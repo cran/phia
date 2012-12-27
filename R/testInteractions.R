@@ -37,7 +37,7 @@ residcontr <- function(levels,abbrev.names){
 
 testInteractions <- function(model, pairwise=NULL, fixed=NULL, residual=NULL, across=NULL, custom=NULL, slope=NULL, adjustment=NULL, label.factors=FALSE, abbrev.levels=FALSE, ...){
 	# Levels in existing factors
-	xlevels <-  model$xlevels
+	xlevels <-  getXLevels(model)
 	dots <- list(...)
 	# Include within-subjects factors, if they are defined
 	if ("idata" %in% names(dots)) xlevels <- c(xlevels, lapply(dots$idata, levels))

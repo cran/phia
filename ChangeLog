@@ -1,0 +1,23 @@
+2012-12-27 Helios De Rosario-Martinez <helios.derosario@ibv.upv.es>
+
+* R/getElements.R: New common internal methods for getting model objects.
+
+* R/interactionMeans.R: Modified to use the methods defined in getElements.R.
+
+* R/testFactors.R (testFactors.lme, testFactors.mer): New methods.
+(testFactors.default): Modified to accept lme and mer objects.
+(addPredictorsToFrame, defineLHT): New internal functions.
+Solved wrong table labels in glm tests.
+
+* R/testInteractions.R: Modified to use the methods defined in getElements.R
+
+* man: Documentation updated and revised.
+
+* vignettes (phia.Rnw): Added section on mixed-effects models. Revised.
+(bibliography.bib): New references
+
+* NAMESPACE: importFrom(lme4, "isGLMM")
+S3method(testFactors, lme)
+S3method(testFactors, mer)
+
+* Version 0.1-0.

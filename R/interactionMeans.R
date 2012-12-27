@@ -1,6 +1,6 @@
 interactionMeans <- function(model, factors=names(xlevels), slope=NULL, ...){
 	# Levels in existing factors
-	xlevels <-  model$xlevels
+	xlevels <-  getXLevels(model)
 	dots <- list(...)
 	# Include within-subjects factors, if they are defined
 	if ("idata" %in% names(dots)) xlevels <- c(xlevels, lapply(dots$idata, levels))
@@ -19,8 +19,8 @@ interactionMeans <- function(model, factors=names(xlevels), slope=NULL, ...){
 		slope.term <- NULL
 	}else{
 		# Check predictors specified in the arguments
-		model.variables <- all.vars(formula(model)[[3]])
-		numeric.predictors <- model.variables[!(model.variables %in% names(model$xlevels))]
+		model.variables <- all.vars(formula(terms(model))[[3]])
+		numeric.predictors <- model.variables[!(model.variables %in% names(xlevels))]
 		specified.numeric <- match(slope,numeric.predictors)
 		if (any(is.na(specified.numeric))) warning("Some covariates are not in the model and will be ignored.")
 		slope <- numeric.predictors[sort(specified.numeric)]
@@ -34,8 +34,9 @@ interactionMeans <- function(model, factors=names(xlevels), slope=NULL, ...){
 	# Define what term is represented in the data frame
 	# (and redefine if it is the link function in a glm)
 	attr(interactions.dataframe,"term") <- term.label
-	if ("glm" %in% class(model)){
-		attr(interactions.dataframe,"family") <- family(model)
+	fam <- getFamily(model)
+	if (!is.null(fam)){
+		attr(interactions.dataframe,"family") <- fam
 		if (attr(tf,"means")=="link" && is.null(slope.term)){
 			attr(interactions.dataframe,"term") <- "(Link)"
 			value.label <- "adjusted link"
@@ -187,7 +188,7 @@ plot.interactionMeans <- function(x, atx=attr(x,"factors"), traces=atx, multiple
 		}else{
 			for (f in 1:length(plotdata)){
 				means <- plotdata[[f]]
-				dev.new()
+				if (f > 1L) dev.new()
 				ylim <- if (y.equal) range(ylim.all) else range(means)
 				if (transform){
 					ylabels <- pretty(fam$linkinv(ylim))

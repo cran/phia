@@ -4,6 +4,8 @@
 \alias{testFactors.lm}
 \alias{testFactors.glm}
 \alias{testFactors.mlm}
+\alias{testFactors.lme}
+\alias{testFactors.mer}
 \alias{summary.testFactors}
 \title{
 Evaluate and Test Combinations of Factor Levels
@@ -20,17 +22,19 @@ Calculates and tests the adjusted mean value of the response and other terms of 
 \method{testFactors}{mlm}(model, levels, covariates, terms.formula=~1,
   inherit.contrasts=FALSE, default.contrasts=c("contr.sum","contr.poly"),
   idata, icontrasts=default.contrasts, lht=TRUE, \dots)
+\method{testFactors}{lme}(model, \dots)
+\method{testFactors}{mer}(model, \dots, link=FALSE)
 \method{summary}{testFactors}(object, predictors=TRUE, matrices=TRUE, \dots)
 }
 \arguments{
-  \item{model}{fitted model. Currently supported classes are \code{"lm"}, \code{"glm"}, and \code{"mlm"}.}
+  \item{model}{fitted model. Currently supported classes are \code{"lm"}, \code{"glm"}, \code{"mlm"}, \code{lme}, and \code{mer} (excluding models fitted by \code{nlmer}).}
   \item{levels}{list that defines the factor levels that will be contrasted; see the \emph{Details} for more information.}
   \item{covariates}{optional numeric vector with specific values of the covariates (see \emph{Details}).}
   \item{terms.formula}{formula that defines the terms of the model that will be calculated and tested.  The default value is ~1, and stands for the adjusted mean value.  See the \emph{Details} for more information.}
   \item{inherit.contrasts}{logical value:  should the default contrasts of model factors be inherited from the model data frame?}
   \item{default.contrasts}{names of contrast-generating functions to be applied by default to factors and ordered factors, respectively, if \code{inherit.contrasts} is \code{FALSE} (the default); the contrasts must produce an intra-subjects model matrix in which different terms are orthogonal.  The default is \code{c("contr.sum", "contr.poly")}.}
   \item{lht}{logical indicating if the adjusted values are tested (via \code{\link{linearHypothesis}).}}
-  \item{link}{for \code{glm} models, logical indicating if the adjusted mean values should represent the link function (\code{FALSE} by default, i.e. represent the adjusted means of the response variable).}
+  \item{link}{for models fitted with \code{glm} or \code{glmer}, logical indicating if the adjusted mean values should represent the link function (\code{FALSE} by default, i.e. represent the adjusted means of the response variable).}
   \item{idata}{an optional data frame giving a factor or factors defining the intra-subjects model for multivariate repeated-measures data, as defined in \code{\link{Anova}} or \code{\link{linearHypothesis}}.}
   \item{icontrasts}{names of contrast-generating functions to be applied in the within-subject \dQuote{data}.  The default is the same as \code{default.contrasts}.}
   \item{object}{object returned by \code{\link{testFactors}}.}
@@ -39,7 +43,7 @@ Calculates and tests the adjusted mean value of the response and other terms of 
   \item{\dots}{other arguments passed down to \code{\link{linearHypothesis}}.}
 }
 \details{
-The only mandatory argument is \code{model}.  The fitted model may include any number of factor or numeric predictors, but no arithmetic expressions.  If any predictor has to be transformed, such transformation should be done explicitly to create (an)other variable(s) that would be included in the model as they are.  The simplest usage of this method, where no other argument is defined, calculates the adjusted mean of the model response variable, pooling all the levels of factor predictors, and setting the numeric predictors (covariates) to their average values in the model data frame.
+The only mandatory argument is \code{model}.  The fitted model may include any number of factor or numeric predictors, but no arithmetic expressions.  If any predictor has to be transformed, such transformation should be done explicitly to create (an)other variable(s) that would be included in the model as they are.  The simplest usage of this method, where no other argument is defined, calculates the adjusted mean of the model response variable, pooling over all the levels of factor predictors, and setting the numeric predictors (covariates) to their average values in the model data frame.
 
 The argument \code{levels} is a list whose elements must be named as the factors of the model --- or the factors of the intra-subjects design, if they exist --- that will be controlled in the calculations.  For any other factors, their levels will be pooled over. Elements whose name does not match any factor of the model will be ignored.  The content of these elements may take different forms:
 \enumerate{
@@ -62,7 +66,7 @@ For multivariate models, the arguments \code{idata}, and \code{icontrasts} may b
 The significance of adjusted values is tested by a call to \code{\link{linearHypothesis}} for each term, unless \code{lht} is set to \code{FALSE}.  Extra arguments may be passed down to that function, for instance to specify the test statistic that will be evaluated.
 }
 \value{
-An object of class \code{"testFactors")}, that contains the adjusted values of each term and the otuput of the test, plus other variables used in the calculations.  The \code{\link{summary}} method for this object will display those variables, unless they be omitted by setting the optional arguments \code{predictors} or \code{matrices} to \code{FALSE}.  The argument \code{predictors} refers to the coefficients of specified combinations of factor levels, the values of covariates, and the contrast matrices used for terms that include factors; \code{matrices} refers to the \dQuote{linear hypothesis matrix} used by \code{\link{linearHypothesis}}, and in multivariate linear models, to the \dQuote{response transformation matrix} as well --- if it exists.
+An object of class \code{"testFactors"}, that contains the adjusted values of each term and the otuput of the test, plus other variables used in the calculations.  The \code{\link{summary}} method for this object will display those variables, unless they be omitted by setting the optional arguments \code{predictors} or \code{matrices} to \code{FALSE}.  The argument \code{predictors} refers to the coefficients of specified combinations of factor levels, the values of covariates, and the contrast matrices used for terms that include factors; \code{matrices} refers to the \dQuote{linear hypothesis matrix} used by \code{\link{linearHypothesis}}, and in multivariate linear models, to the \dQuote{response transformation matrix} as well --- if it exists.
 
 Moreover, \code{\link{summary}} groups the results of the tests for all terms in one table.  By default this table shows the test statistics, their degrees of freedom, and the \emph{p}-values.  If the model is of class \code{"lm"}, it also shows the sums of squares; and if it is of class \code{"mlm"}, only the first type of test statistic returned by \code{\link{linearHypothesis}} (by default \dQuote{Pillai}) is shown.  This variable shape of the ANOVA table is controlled by additional classes assigned to the object (either \code{"testFactors.lm"} or \code{"testFactors.mlm"}, as suitable).
 }
@@ -72,6 +76,7 @@ Helios De Rosario-Martinez, \email{helios.derosario@ibv.upv.es}
 \seealso{
 \code{\link{linearHypothesis}} in package \pkg{car}, \code{\link{interactionMeans}}, and \code{\link{testInteractions}} .
 }
+\note{The tests of mixed models are done under the assumption that the estimation of the random part of the model is exact.}
 \examples{
 # Example with factors and covariates
 # Analyse prestige of Canadian occupations depending on

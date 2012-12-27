@@ -4,7 +4,7 @@
 Test Contrasts of Factor Interactions
 }
 \description{
-Calculates and tests different types of contrasts for factor interactions, in linear and generalized linear models: simple main effects, interaction contrasts, residual effects, and others.
+Calculates and tests different types of contrasts for factor interactions, in linear, generalized and mixed linear models: simple main effects, interaction contrasts, residual effects, and others.
 }
 \usage{
 testInteractions(model, pairwise=NULL, fixed=NULL, residual=NULL, across=NULL,
@@ -12,7 +12,7 @@ testInteractions(model, pairwise=NULL, fixed=NULL, residual=NULL, across=NULL,
   abbrev.levels=FALSE, \dots)
 }
 \arguments{
-  \item{model}{fitted model. Currently supported classes are \code{"lm"}, \code{"glm"}, and \code{"mlm"}.}
+  \item{model}{fitted model. Currently supported classes are \code{"lm"}, \code{"glm"}, \code{"mlm"}, \code{lme}, and \code{mer} (excluding models fitted by \code{nlmer}).}
   \item{pairwise}{character vector with the names of factors represented by pairwise contrasts.}
   \item{fixed}{character vector with the names of factors represented by fixed levels.}
   \item{residual}{character vector with the names of factors represented by residuals effects.}
@@ -46,6 +46,7 @@ Helios De Rosario-Martinez, \email{helios.derosario@ibv.upv.es}
 \seealso{
 \code{\link{testFactors}}, \code{\link{interactionMeans}}.
 }
+\note{The tests of mixed models are done under the assumption that the estimation of the random part of the model is exact.}
 \examples{
 # Tests of the interactions described in Boik (1979)
 # See ?Boik for a description of the data set

@@ -5,19 +5,19 @@
 \title{
 Post-Hoc Interaction Analysis}
 \description{
-Analysis of terms in linear and generalized linear models, on the basis of
-multiple comparisons of factor contrasts. Specially suited for the analysis of
-interaction terms.}
+Analysis of terms in linear, generalized, and mixed linear models, on the basis
+of multiple comparisons of factor contrasts.  Specially suited for the analysis
+of interaction terms.}
 \details{
 \tabular{ll}{
 Package: \tab phia\cr
 Type: \tab Package\cr
-Version: \tab 0.0-2\cr
-Date: \tab 2012-05-08\cr
+Version: \tab 0.1-0\cr
+Date: \tab 2012-12-27\cr
 License: \tab GPL (>= 3)\cr
 }
 This package contains functions that may be used for the post-hoc analysis
-of any term of linear models (univariate or multivariate), and generalized
+of any term of linear models (univariate or multivariate), generalized and mixed
 linear models with factors or covariates.  The function \code{testFactors}
 provides a flexible user interface for defining combinations of factor levels
 and covariates, to evaluate and test the model, using the function
