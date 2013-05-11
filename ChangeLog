@@ -1,3 +1,9 @@
+2013-05-11 Helios De Rosario-Martinez <helios.derosario@ibv.upv.es>
+
+* vignettes/phia.Rnw: Analysis of AMSsurvey adapted to data of pkg car 2.0-17.
+
+* Version 0.1-1.
+
 2012-12-27 Helios De Rosario-Martinez <helios.derosario@ibv.upv.es>
 
 * R/getElements.R: New common internal methods for getting model objects.

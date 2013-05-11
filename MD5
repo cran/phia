@@ -1,5 +1,5 @@
-b6b7469fb17a1bdc74a5233aac7f7bf6 *ChangeLog
-fc60df59d9d3f01e72e608348ca05ea6 *DESCRIPTION
+9f6f91a08ccf989f6535db0545573113 *ChangeLog
+9e3566646ce6aebcfa6de1d957d2f8f6 *DESCRIPTION
 7a7e81f1974f97707de235fe5bfe69c2 *NAMESPACE
 fc97614f94cca486901e490ef15b8543 *R/getElements.R
 87e32499e311abdd566fa519a585e27c *R/interactionMeans.R
@@ -8,8 +8,9 @@ cb6a592b07c2dd64143f9715427b83b2 *R/testFactors.R
 572f519e46bd9f07bc6beb66512e8194 *data/Boik.rda
 997af2c5d37036ee1b6c4f36867a38e0 *data/Keselman.rda
 faac169d3866ef93ca0a27ae80f0f212 *data/Rosnow.rda
-aef6dfa9789b451d2b0a4f8e45cf988f *inst/doc/phia.Rnw
-c8561a4a2891930e0a8f7ac0e20a9def *inst/doc/phia.pdf
+8961b8195ac89367c5203cee08539474 *inst/doc/phia.R
+71a0debe1903106e672c435227db7620 *inst/doc/phia.Rnw
+e08a67ae175151a2768796b360e54919 *inst/doc/phia.pdf
 0215b9ad6d5193b7035f0b27aef5ca07 *man/Boik.Rd
 768b0cc698854ebf81bc2e3016c4eb4a *man/Keselman.Rd
 71d6cf60f85c15b4df3b7450abc6de8f *man/Rosnow.Rd
@@ -18,4 +19,4 @@ c8561a4a2891930e0a8f7ac0e20a9def *inst/doc/phia.pdf
 fb28cd8d34221664b95695d31bda5cf8 *man/testFactors.Rd
 e828f28fb4c63d330f764a24c19ae6f3 *man/testInteractions.Rd
 741244caa70a56d6f72eedcb5fe0fa17 *vignettes/bibliography.bib
-aef6dfa9789b451d2b0a4f8e45cf988f *vignettes/phia.Rnw
+71a0debe1903106e672c435227db7620 *vignettes/phia.Rnw

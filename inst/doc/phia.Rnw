@@ -26,7 +26,7 @@ options(useFancyQuotes = FALSE)
 This vignette presents a brief review about the existing approaches
 for the \emph{post-hoc} analysis of interactions in factorial experiments,
 and describes how to perform some of the cited calculations and tests
-with the functions of package \pkg{phia} in \R{}. Those
+with the functions of the package \pkg{phia} in \R{}. Those
 functions include the calculation and plotting of cell means, and
 testing simple effects, residual effects, and interaction contrasts,
 among other possibilities. They can be applied to linear and generalized
@@ -38,7 +38,7 @@ models for repeated measures experiments.
 
 The \emph{post-hoc} analysis of interactions in factorial ANOVA is
 a controversial issue, that has generated many discussions and a variety
-of methods. The most frequent practice has traditionally been the
+of methods. Traditionally, the most frequent practice has been the
 analysis of \emph{simple main effects}, i.e. the main effect of one
 factor at fixed values of the other factors. This type of analysis,
 however, has severly been criticized for its mixing both main and
@@ -58,42 +58,42 @@ However, such proposals have not produced an established ``correct''
 practice at all. In fact, the analysis of interactions has been a
 heated field of debate for years; see Games' defence of simple effect
 tests \cite{games_type_1973} and Levin's and Marascuilo's response
-\cite{levin_type_1973}, or the criticisms of Meyer and Petty's et
+\cite{levin_type_1973}, or the criticisms of Meyer and Petty et
 al. to Rosnow's and Rosenthal's proposals \cite{meyer_misinterpretation_1991,petty_understanding_1996},
 as well as the answer to the latter \cite{rosnow_contrasts_1996}.
-Although the theoretical issues of simple effects test are generally
+Although the theoretical issues of simple effects tests are generally
 acknowledged, an eventual consensus about the ``best'' alternative
 method is probably difficult to achieve. A general valid procedure
 is not possible in the first place, since the correct test depends
 on the specific problem addressed by the experiment.
 
-Unfortunately, many researchers do not choose the method
+Unfortunately, many researchers do not choose a method
 depending on the question they want to answer. In spite of the criticism
 received by the analysis of simple effects, various reviews of published
 research in the three last decades have shown that it still is by
 far the most frequent practice \cite{rosenthal_definition_1989,ottenbacher_interpretation_1991,pardo_interaccion_2007}.
 According to Pardo's et al. interpretation, this is partly due to
 the limitations of commonplace software packages, which do not provide
-direct facilities for analysing the contrasts that isolate the interaction
+direct facilities for analysing the contrasts that isolate interaction
 effects \cite{pardo_interaccion_2007}.
 
-On the other hand, the flexibility of \R{} does allow to analyze
-any kind of contrast on the factors of fitted models, even beyond
-the two- or three-factorial designs that are discussed in the literature.
+On the other hand, the flexibility of \R{} does allow to analyse
+any kind of contrast across the factors of fitted models, even beyond
+the two- or three-factorial designs that are normally discussed in the literature.
 After all, any contrast can be described as a linear combination of
 the model coefficients. Thus, since the mathematical details of fitted
 models (like their matrices of coefficients and covariances) are easily
 available in \R{}, the values and errors of those contrasts
-can easily be calculated, and moreover there are contributed functions
+can be calculated without difficulty, and moreover there are contributed functions
 that facilitate the statistical tests based on such combinations of
-coefficients, like \code{linearHypothesis} in package \pkg{car}
+coefficients, like \code{linearHypothesis} in the package \pkg{car}
 \cite{Fox-CAR2011}, or \code{glht} in \pkg{multcomp}
 \cite{multcomp-Hothorn}, which is specially suited for testing main
 effects.
 
 The package \pkg{phia} (Post-Hoc Interaction Analysis) provides
-a usable interface for calculating the different types of contrasts
-related to interactions that are mentioned in the cited literature,
+a usable interface for calculating different types of contrasts,
+that are mentioned in the literature related to the analysis of interactions,
 as well as other combinations of factors that could be of interest
 for the researcher. The functionality of this package also extends
 to more complex models, like generalized linear models, mixed-effects models,
@@ -110,9 +110,9 @@ and testing them.
 \section{Mathematical formulation of interactions\label{sec:maths-interactions}}
 
 Interactions are often described in terms of a linear, two-way factorial
-model, where the response $Y$ is a function of factors $A$ and $B$.
-Interactions are said to exist when the effect on the dependent variable
-of a change in the level of one factor depends on the level of another
+model, where the response variable $Y$ is a function of the factors $A$ and $B$.
+Interactions are said to exist when a change in the level of one factor has
+different effects on the response variable, depending on the value of the other
 factor \cite{dodge_concise_2008}. This is often represented by the
 following formula:
 
@@ -121,11 +121,11 @@ Y_{ijk}=\mu+\alpha_{i}+\beta_{j}+\left(\alpha\beta\right)_{ij}+\varepsilon_{ijk}
 where $\alpha_{i}$, $\beta_{j}$ represent the {}``main effect''
 of the $i$\nobreakdash-th and $j$\nobreakdash-th levels of $A$
 and $B$, respectively, $\left(\alpha\beta\right)_{ij}$ is the effect
-of the interaction in that or combination of levels, and $\varepsilon_{ijk}$
+of the interaction in that combination of levels, and $\varepsilon_{ijk}$
 is the error term of the $k$\nobreakdash-th observation in that
-combination or {}``cell''.
+combination.
 
-\R{} analyzes such models in the more general framework of linear
+\R{} analyses such models in the more general framework of linear
 models, defined by the following matrix equation:
 
 \begin{equation}
@@ -139,7 +139,7 @@ matrix for that model structure and data (with $r$ degrees of freedom
 
 The structure of $\mathbf{X}$ and $\mathbf{B}$ is very simple for
 linear regression models, where all predictors are numeric variables.
-Let's take a regression model with an univariate response and two
+Let us take a regression model with an univariate response and two
 regressors ($X_{1}$ and $X_{2}$), including their interaction. In
 this case \eqref{eq:glm-matrix} would just be the formulation in
 matrix form of the regression equation:
@@ -162,14 +162,14 @@ Y_{n}\end{array}\right)=\left(\begin{array}{cccc}
 
 
 This model has 3 terms, each with one d.o.f., that are represented
-by different columns of $\mathbf{X}$ and coefficients in $\mathbf{B}$
+by different columns of $\mathbf{X}$ and coefficients of $\mathbf{B}$
 (besides the intercept represented by the column of ones and $\beta_{0}$).
-Two of them are the main effects of the regressors, represented by
+Two of these terms are the main effects of the regressors, represented by
 their values in $\mathbf{X}$ and the ``slopes'' $\beta_{1}$,
 $\beta_{2}$; the other one is the interaction term, represented by
 the product $X_{1i}X_{2i}$ and the coefficient $\beta_{12}$. For
 more complex regression models, there may be as many terms as possible
-products of regressors, so that if there are $k$ of them, there may
+products of regressors, such that if there are $k$ regressors, there may
 be up to $k^{2}-1$ terms.
 
 If some or all the predictor variables are factors, the same equations
@@ -177,7 +177,7 @@ hold, but the representation of the terms in the model matrix would
 not be scalar values as $X_{1i}$, $X_{2i}$, or $X_{1i}X_{2i}$.
 The main term of each factor would be represented by a set of ``dummy
 variables'', whose number would be equal to the d.o.f. of the factor
-(the number of levels minus 1), and interactions would be represented
+(the number of levels minus 1), and the interactions would be represented
 by all the possible products of the corresponding dummy variables.
 Thus, for instance, if there are two factors $A$ and $B$ with $3$
 and $4$ levels, respectively, the term of $A$ would be represented
@@ -202,7 +202,7 @@ which are commented on next.
 
 Let us take, for this and later sections, an example data set based
 on R.J. Boik's hypothetical data \cite{boik_interactions_1979}, which
-he used for demonstrating how to analyze interaction contrasts in linear models,
+he used for demonstrating how to analyse interaction contrasts in linear models,
 although it will be used here for a larger variety of interaction analyses.
 It represents a hypothetical experiment, where people affected by
 hemophobia were treated with different fear reduction therapies and
@@ -211,11 +211,11 @@ design, and the effect of these combined treatments was measured by
 their electrodermal response in an experimental session. 
 
 First we need to create the linear model from the data. We will use
-the data frame \code{Boik} also included in package \pkg{phia},
+the data frame \code{Boik} also included in the package \pkg{phia},
 that has the response \code{edr}, and two factors (\code{therapy},
 with levels \code{control}, \code{T1}, and \code{T2}; and \code{medication},
 with levels \code{placebo}, \code{D1}, \code{D2}, and \code{D3}).
-We use the function \code{some} of package \pkg{car} (imported
+We use the function \code{some} of the package \pkg{car} (imported
 by \pkg{phia}) to see some cases:
 
 <<>>=
@@ -255,10 +255,10 @@ is significant, so it does makes sense to investigate this effect.%
 \footnote{The data set is based on the results reported in Boik's paper for
 the different tests, but not directly copied from his original work
 (that actually gives no data set). Thus, the residual plots are irrespective
-of Boik's paper, and due to rounding inaccuracies, the last decimals
-of the tables in that paper are not exactly the same as those reported
-in this vignette. Regarding the ANOVA calculations, the \code{Anova}
-function of package \pkg{car} is used to be consistent with later
+of Boik's paper, and due to rounding inaccuracies, the figures presented in this
+vignette and the ones of Boik's tables differ in the last decimals.
+Regarding the ANOVA calculations, the \code{Anova} function from the package
+\pkg{car} has been used to be consistent with later
 sections, although for this set of balanced data the results would
 be the same if we had used \code{anova} from the base \R{}
 package.%
@@ -272,21 +272,21 @@ response for the corresponding interaction of factors.
 When there is an interaction effect, the cell means are taken as the
 most straightforward way of representing this effect. These values
 can be obtained from the model coefficients with the function
-\code{interactionMeans} in package \pkg{phia}, using the fitted
+\code{interactionMeans} in the package \pkg{phia}, using the fitted
 model as first (and in this case only) argument:
 
 <<>>=
 (boik.means <- interactionMeans(mod.boik))
 @
 
-This function calculates by default the cell means for the highest
-order interaction between factors. To obtain means for lower-order
-interactions, the optional argument \code{factors} allows defining
-the names of the factors included in the desired interaction.%
+This function calculates by default the cell means for the interactions of
+highest order between factors. To obtain means of lower-order
+interactions, the optional argument \code{factors} admits a character vector
+with the names of the factors that are included in the desired interaction.%
 \footnote{But consider the contradiction of this approach with the marginality
 principle discussed in the next section.%
 } If this argument gives only one factor, the result will be the means
-of its zero-order interaction (i.e. the marginal means for that factor).
+of its zeroth-order interaction (i.e. the marginal means for that factor).
 Thus, for instance:
 
 <<>>=
@@ -335,16 +335,15 @@ plot(boik.means, multiple=FALSE) # Not printed in this paper
 The basic methods of statistical analysis in \R{} favour the
 so-called ``marginality principle'', whereby the main effects
 of factors with non-null interactions should not be interpreted or
-tested \cite{nelder_reformulation_1977}. And the same warning applies
+tested \cite{nelder_reformulation_1977}. Now, the same warning applies
 to interactions that are themselves contained in interactions of higher
 order. Thus, although the plots described in the previous section
 are commonplace in the study of interactions, they are not necessarily
 meaningful in all circumstances.
 
 For instance, since the interaction between \code{therapy} and \code{medication}
-is significant, according to the marginality principle we should not
-take care of the main effects of those factors (regardless of what
-the corresponding lines of the ANOVA table indicate), so the diagonal
+is significant, according to the marginality principle we should not be
+concerned with the main effects of those factors, so the diagonal
 panels of figure \ref{fig:mod-boik-plot} would be irrelevant for this model.
 Likewise, if a model has more than two factors and an interaction
 of second or higher order is significant, no plot containing those
@@ -355,13 +354,13 @@ representation alone, since the data frame can represent higher-order
 interactions).
 
 A suitable alternative for representing higher-order interactions
-are the functions \code{effect} and\\ \code{allEffects} in package
+are the functions \code{effect} and\\ \code{allEffects} from the package
 \pkg{effects} \cite{Fox:Hong:2009:JSSOBK:v32i01}. For factorial
 models, their outputs contain the same type of data as \code{interactionMeans},
 although they handle the numeric predictors of the model in another
-way, and the types of models that can be analyzed is different (see
+way, and the types of models that can be analysed is different (see
 sections \ref{sec:repeated-measures} and \ref{sec:covariates}). Those functions
-are specially devised to analyze and plot the interactions of highest
+are specially devised to analyse and plot the interactions of highest
 order in the model, through more sophisticated graphic tools, and
 they also calculate and plot confidence intervals of the means.
 
@@ -370,11 +369,11 @@ they also calculate and plot confidence intervals of the means.
 
 The tabulation or graphical representation of cell means may give
 us a hint of the underlying structure of interactions, but they do
-not suffice to assure whether a specific change in the factors plays
+not suffice to verify whether a specific change in the factors plays
 a significant role in an interaction. As commented on above, the most
-frequent approach for solving this issue is testing the simple effects,
-as an extension of the \emph{post-hoc} methods widely applied to main
-factor effects.
+frequent approach for solving this issue consists in testing the simple effects,
+as an extension of the \emph{post-hoc} methods that are widely applied to 
+the study of main factor effects.
 
 The available methods for the \emph{post-hoc} analysis of main effects
 are manifold. The most basic procedure consists in evaluating multiple
@@ -411,7 +410,7 @@ In this case, since the original data frame defines \code{medication}
 as an ordered factor, polynomial contrasts are computed by default.
 For unordered factors they would have been {}``sum-to-zero contrasts''.
 This default behaviour can be overriden by setting other contrast
-in the original data frame, the model fit, or with additional arguments
+in the original data frame, the fitted model, or with additional arguments
 in \code{testInteractions}.%
 } The rest of columns show the information of the multivariate test
 applied to those contrasts. These tests just quantify the qualitative
@@ -420,7 +419,7 @@ have a significant effect for the control therapy group, but its effect
 is remarkable for the other groups.
 
 The criticism often posed to this method is that interactions are
-mixed with main effects (or lower order interactions within), so the
+mixed with main effects (or lower-order interactions within), so the
 tests are not really related to the term that is supposedly under
 investigation. Using this example, the \emph{post-hoc} analysis of
 the term \code{therapy:medication} is being performed because the ANOVA
@@ -429,10 +428,10 @@ the matrix $\mathbf{B}$ related to this term are unlikely to be null.
 However, the tests of simple effects that have just been described
 do not only involve those coefficients, but also the coefficients
 related to the lower-order terms \code{therapy} and \code{medication}.%
-\footnote{\code{interactionTest} calls repeatedly the function \code{testFactors},
+\footnote{\code{interactionTest} does multiple calls to the function \code{testFactors},
 which in its turn defines a linear combination of the model coefficients
-and passes it down to \code{linearHypothesis}. The hypothesis matrices
-used for these tests can be looked at to see what coefficients are
+and passes it down to \code{linearHypothesis} from \pkg{car}. The hypothesis matrices
+used in these tests can be looked at to see what coefficients are
 actually involved.%
 }
 
@@ -442,7 +441,7 @@ of lower-order coefficients may be regarded a lesser issue when the
 marginality principle is considered. In this theoretical framework,
 the presence of a high-order interaction makes lower order terms meaningless,
 so that their effects are absorbed by the interaction. Therefore,
-the coefficients of lower-order terms would partially be related to
+the coefficients of lower order terms would partially be related to
 the interaction effect as well.
 
 
@@ -461,7 +460,7 @@ boik.mtable <- addmargins(boik.mtable, FUN=mean, quiet=TRUE)
 print(boik.mtable, digits=4)
 @
 
-The ``corrected means'' would result from subtracting the lowest-order
+The ``corrected means'' would be obtained by subtracting the lowest-order
 effect (the grand mean) from the rest of values of the table, and
 then sweeping out the corrected marginal means from the individual
 cells.
@@ -546,9 +545,9 @@ contrasts, which were in fact the subject of the paper where our
 working data is derived from, although Boik used a slightly different
 procedure for their analysis. Like in the analysis of interaction residuals,
 the hypothesis tested by interaction contrasts is not affected by the
-coefficients of main effects, but this approach overcomes the problem
-commented on about interaction residuals, because it does not make use
-of marginal means, it only uses the data of cells \cite{levin_type_1973,meyer_misinterpretation_1991}.
+coefficients of main effects, but this approach overcomes the commented issue
+of interaction residuals, because it does not make use
+of marginal means, it only uses the data of the cells \cite{levin_type_1973,meyer_misinterpretation_1991}.
 Interaction contrasts are defined as ``differential effects'',
 or more descriptively as ``differences of differences'', or ``contrasts
 between contrasts''. They basically consist in calculating one or
@@ -567,9 +566,10 @@ testInteractions(mod.boik, pairwise="therapy", across="medication")
 @
 
 These tests show how the contrasts across \code{medication} differ
-between pairs of \code{therapy} groups. We can see that the effect
-of therapy \code{T1} differs from the controls and the other therapy,
-even more than \code{T2} from the controls. This was not so clear
+between pairs of \code{therapy} groups. We can see that the medication effect
+with the therapy \code{T1} differs from the effect in controls and for the
+other therapy; the medication effect with \code{T2} also differs from the effect
+in controls, but this variation is not so remarkable. This conclusion was not so clear
 from the simple effects tests. Moreover, these results are not disturbed
 by the main effects of factors at all, because the calculation of
 contrasts has removed them for both factors, without having defined
@@ -615,7 +615,7 @@ D1.vs.D3 <- c(0, 1, 0, -1)       # Min. dose vs. max.
 D2.vs.avrg <- c(0, -1, 2, -1)    # Med. dose vs. average
 @
 
-Now, \code{testInteractions} allows defining of such custom
+Now, \code{testInteractions} allows to define such custom
 contrasts, via the argument \code{custom}. This argument must be
 a named list of matrices, one per factor, with the vectors of coefficients
 arranged in columns. So we build those matrices, and although it is
@@ -657,7 +657,7 @@ these contrasts are orthogonal to each other (none of them can be
 obtained by combination of the others), so the tests are independent,
 and the adjustment of \emph{p}\nobreakdash-values is reliable. Taking
 some care about the meaning of positive and negative figures of the
-column of \code{Values}, we can obtain the following conclusions:
+\code{Value} column, we can obtain the following conclusions:
 \begin{enumerate}
 \item According to the first two tests, the benefit of taking medication
 (pooling over the three doses) is greater if the subject also receives
@@ -685,7 +685,7 @@ are more robust \cite{keselman_testing_1998}.
 An example of such an analysis in \R{} is published in the web appendices to
 Fox's and Weisberg's \emph{R Companion to Applied Regression} \cite{Fox-appendix-mlm-car}.
 We will use that example, based on the \code{OBrienKaiser} data set
-of package \pkg{car} \cite{obrien_manova_1985}.
+from \pkg{car} \cite{obrien_manova_1985}.
 
 <<>>=
 some(OBrienKaiser, 6)
@@ -785,7 +785,7 @@ hypothesis in that case, because the number of observations for treatment
 \code{A} is lower, and therefore the size of the effect is relatively
 smaller.
 
-The main effect of \code{hour} could be analyzed similarly. As told
+The main effect of \code{hour} could be analysed similarly. As told
 above, there are other packages that handle main effects efficiently;
 however, the most typical procedures are designed for univariate analyses,
 and the recommended solution for \emph{post-hoc} of this kind of multivariate models
@@ -811,12 +811,12 @@ are infinite. Therefore, the effects of covariates are usually represented
 as continuous functions within the range of their observed values
 (the model may allow the calculation of effects beyond that range,
 but such predictions would normally have little reliability). For
-instance, the functions \code{effect} and \code{allEffects} in
+instance, the functions \code{effect} and \code{allEffects} from the
 package \pkg{effects} evaluate the adjusted mean of the response
 at a sample of values of the covariates, either automatically calculated
 by the function or specified by the user.
 
-However, we have seen that the effects of factors may also be analyzed
+However, we have seen that the effects of factors may also be analysed
 by the contrasts between levels. Obviously, for covariates there are
 infinite possible contrasts as well, although they are constrained by
 the d.o.f. of the model. Let us take a pure linear regression model
@@ -846,10 +846,10 @@ of the response for different values of the covariate, as given by
 the functions of \pkg{effects}, the only additional information
 that he or she needs is the adjusted mean at an arbitrary point.
 
-The functions of package \pkg{phia} only report the values of the
+The functions of the package \pkg{phia} only report the values of the
 slopes. Let us take the model for the prestige of Canadian occupations,
 defined in \cite{Fox-CAR2011}, p. 165. We will use the data set \code{Prestige}
-of package \pkg{car}, that contains several variables related to
+from \pkg{car}, that contains several variables related to
 102 different occupations:
 
 <<>>=
@@ -863,7 +863,7 @@ income), and the factor \code{type}, that has three levels: \code{bc}
 collar). As recommended in the source of this example, we will log-transform
 \code{income}, in order to obtain a more normal behaviour of that
 variable. However, mathematical operators in the model formula may
-confuse the functions of package \pkg{phia}, so we will do this
+confuse the functions of \pkg{phia}, so we will do this
 transformation in the data frame:
 
 <<>>=
@@ -918,7 +918,7 @@ table(Prestige$type) # Frequencies of occupation types
 @
 
 If there had been a significant interaction between the covariate \code{education}
-and \code{type}, we could have analyzed it independently, since
+and \code{type}, we could have analysed it independently, since
 both covariates have an additive effect (they do not interact). Things
 may become more complicated if there are interactions between covariates.
 In that case, the slopes are not constant for given combinations of
@@ -1018,14 +1018,14 @@ linear models in most aspects, let aside the distribution of the error
 term and the expected value of the response, $\mu=E\left(Y\right)$,
 that is related to the linear predictor by means of a \emph{link function}
 $\eta\left(\mu\right)$. Accordingly, the interactions of such models
-can be analyzed by the methods explained in previous sections, although
+can be analysed by the methods explained in previous sections, although
 the interpretaton of adjusted values in cell means and contrasts may
 be a  bit more involved.
 
 Let us take the example of the AMS survey about PhDs in mathematical
-sciences. This example uses the data set \code{AMSsurvey} of package
+sciences. This example uses the data set \code{AMSsurvey} of the package
 \pkg{car}, that contains a cross-classification of all the PhDs
-awarded in the mathematical sciences for 2008-2009 in US, assigned
+awarded in the mathematical sciences for different periods in US, assigned
 to 24 different categories depending on various characteristics of
 the doctorate students \cite{Phipps2010}.
 
@@ -1034,34 +1034,34 @@ str(AMSsurvey)
 @
 
 The data are structured in a data frame, with one row per category.
-The last variable is \code{counts} (the number of PhDs
-in each category), and the other are factors that identify the
-category. One of these factors is \code{type},
+The variable \code{counts} tells the number of PhDs of each category in 2008-2009,
+and the previous variables are factors that identify the category.%
+\footnote{\code{AMSsurvey} also contains data of other periods, but we will focus
+on the period 2008-2009. The analysis will be based on a parsimonious model for
+those data, which is already fitted in \cite[pp. 253--255]{Fox-CAR2011}.%
+} One of these factors is \code{type},
 the type of institution the doctorate was affiliated with, and has
-6 levels: \code{I(Pu)}, \code{I(Pr)}, \code{II}, \code{III},
+6 levels: \code{I(Pr)}, \code{I(Pu)}, \code{II}, \code{III},
 \code{IV}, and \code{Va};\code{ I} to \code{III} are math
 departments in universities of progressively lower-quality --- with
-\emph{pu}blic and \emph{pr}ivate institutions distinguished by the
+\emph{pr}ivate and \emph{pu}blic institutions distinguished by the
 parenthetical abbreviations, \code{IV} are statistics and biostatistics
 departments, and \code{Va} are applied mathematics departments.
-The other independent factors are \code{sex} (the gender of the
+The other factors are \code{sex} (the gender of the
 doctorate, a factor with levels \code{Female} and \code{Male}),
 and \code{citizen} (the citizenship status, a factor with levels
-\code{Non-US} and \code{US}). Moreover, there is an additional
-factor \code{class} that combines the levels of \code{sex} and
-\code{citizen}. The contents of the data frame are clearer if shown
-as a contingency table of \code{type} and \code{class}:
+\code{Non-US} and \code{US}). The contents of the data frame are clearer if shown
+as a contingency table:
 
 <<>>=
-xtabs(count ~ type+class, AMSsurvey)
+ftable(xtabs(count ~ sex + citizen + type, AMSsurvey))
 @
 
 A saturated model of these data would represent \code{count} as
 a function of the three-way interaction of \code{type}, \code{sex},
-and \code{citizen}. But as shown in \cite[pp. 253--255]{Fox-CAR2011}
-by term deletion in a GLM, the influences of \code{sex} and \code{citizen}
-are independent to each other, so we can use a simplified model. Since
-we are dealing with count data, the appropriate family would be a
+and \code{citizen}. But the influences of \code{sex} and \code{citizen}
+are independent to each other, so we can use a simplified model \cite{Fox-CAR2011}.
+Since we are dealing with count data, the appropriate family would be a
 Poisson distribution. All in all, the model could be defined as follows:
 
 <<>>=
@@ -1228,13 +1228,13 @@ the work (although with an increased residual error).
 It is also possible to work with \emph{generalized mixed-effects models}, where
 both the coefficients of random effects and the residual error follow a non-normal
 distribution.%
-} These models may be analyzed in \R{} with the functions included in the packages
+} These models may be analysed in \R{} with the functions included in the packages
 \pkg{nlme} \cite{Pinheiro-nlme} and \pkg{lme4} \cite{Bates-lme4}.
 In the following examples we will use the latter, which is
 more flexible and efficient, although the procedure for analysing interactions
 is the same in both cases.
 
-The functions of package \pkg{phia} for the post-hoc analysis of mixed-effects
+The functions of \pkg{phia} for the post-hoc analysis of mixed-effects
 models are used just like in the case of linear and generalized linear models.
 Multivariate responses in mixed-effects models are not supported, however,
 although in some cases this may be worked around by a modification
@@ -1269,7 +1269,7 @@ Following one of the examples worked by Snijders and Bosker,
 we will study the scores of a language test as a regression of the students' IQ
 in verbal tasks and their socio-economical status (SES), possibly influenced by
 their gender, and the average SES and IQ of their schoolmates.
-In addition, we will explore the strategy to analyze repeated-measures with a
+In addition, we will explore the strategy to analyse repeated-measures with a
 mixed-effects model, by comparing the achievements in two repetitions of the
 language test: at the start and end of the school year.
 All in all, the variables of interest in the original data frame \code{bdf} are:
@@ -1352,7 +1352,7 @@ would define the effects of the interaction between \code{repetition} and those
 terms (i.e. \code{repetition:IQ}, \code{repetition:SES}, etc.).
 
 On the other hand, we may fit a single model that accounts for all the terms that
-we want to analyze with more flexibility. For that, we first have to transform the
+we want to analyse with more flexibility. For that, we first have to transform the
 ``wide'' data frame with \code{score.1} and \code{score.2} as different columns,
 into a ``long'' data frame with both of them in one column.
 We will also need the \code{repetition} factor explicitly defined in the data frame,
@@ -1403,7 +1403,7 @@ problematic. That is the reason why the table of coefficients of a model fitted
 by \code{lmer} does not show \emph{p}\nobreakdash-values, as may be seen above, nor
 are they presented in the ANOVA table given by the standard \code{anova} method
 \cite{R-help:094765}.%
-\footnote{Mixed models fitted with \code{lme} from package \code{nlme} do
+\footnote{Mixed models fitted with \code{lme} from the package \code{nlme} do
 show \emph{p}\nobreakdash-values, but this does not mean that they should always be trusted.%
 }
 
@@ -1411,10 +1411,10 @@ There are different techniques for working around this problem, like the
 Kenward-Roger approximation or parametric bootstrap, which are implemented
 in the package \pkg{pbkrtest} \cite{Halekoh-pbkrtest}. An alternative approach is assuming that the
 covariances of the random part of the model are equal to the estimated values,
-and then use standard tests \cite{Faraway2006}. The function \code{Anova} of
-package \pkg{car} produces tables with \emph{p}\nobreakdash-values based on
+and then use standard tests \cite{Faraway2006}. The function \code{Anova} from
+\pkg{car} produces tables with \emph{p}\nobreakdash-values based on
 Wald tests, following the latter assumption \cite{R-sig-ME:014095}, and by
-extension, the same happens with the test functions of package \pkg{phia},
+extension, the same happens with the test functions of the package \pkg{phia},
 which are also dependent on the function \code{linearHypohtesis} from \pkg{car}.
 
 This being said, we can first look what terms are significant according to the
@@ -1465,7 +1465,7 @@ though they may contribute to a significantly better fit of the model.
 \section*{Acknowledgements}
 
 I thank Professors John Fox and Michael Friendly, for their encouragement
-and advise in the creation of the functions of package \pkg{phia}.
+and advise in the creation of the functions of \pkg{phia}.
 
 
 
