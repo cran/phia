@@ -367,9 +367,9 @@ testFactors.default <- function(model,levels,covariates,terms.formula=~1,inherit
 
 	# 1. Make complete list of variables, and extract factors
 	mf <- getModelFrame(model)
-	X <- mf[-1]
 	predictor.classes <- attr(terms(mf),"dataClasses")[-1]
 	predictors <- names(predictor.classes)
+	X <- mf[predictors]
 	are.factors <- (predictor.classes %in% c("factor","ordered"))
 	factor.names <- predictors[are.factors]
 	# Factor data frame, with appropriate contrasts

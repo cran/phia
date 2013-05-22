@@ -1,3 +1,11 @@
+2013-05-22 Helios De Rosario-Martinez <helios.derosario@ibv.upv.es>
+
+* R/testFactors.R: Fixed bug of testFactors.default for mixed models
+
+* R/getElements.R: Fixed bug of getFamily.mer
+
+* Version 0.1-2.
+
 2013-05-11 Helios De Rosario-Martinez <helios.derosario@ibv.upv.es>
 
 * vignettes/phia.Rnw: Analysis of AMSsurvey adapted to data of pkg car 2.0-17.

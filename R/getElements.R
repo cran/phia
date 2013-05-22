@@ -49,7 +49,7 @@ getFamily.mer <- function(model){
 				error=function(e) fam <- NULL
 			)
 		}
-		return(fam())
+		return(eval(fam)())
 	}else return(NULL)
 }
 getFamily <- function(model){UseMethod("getFamily")}
