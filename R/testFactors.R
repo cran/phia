@@ -365,13 +365,11 @@ testFactorsOnTerm.mlm <- function(model,term,numeric.predictors,between.frame,wi
 ## DEFAULT METHOD
 testFactors.default <- function(model,levels,covariates,terms.formula=~1,inherit.contrasts=FALSE,default.contrasts=c("contr.sum","contr.poly"),lht=TRUE,...){	
 
-	# 1. Make complete list of variables, and extract factors
-	mf <- getModelFrame(model)
-	predictor.classes <- attr(terms(mf),"dataClasses")[-1]
-	predictors <- names(predictor.classes)
-	X <- mf[predictors]
-	are.factors <- (predictor.classes %in% c("factor","ordered"))
-	factor.names <- predictors[are.factors]
+	# 1. Make complete list of predictor variables, and extract factors
+	predictors <- all.vars(terms(model))[-1]
+	X <- getModelFrame(model)[predictors]
+	are.factors <- as.logical(sapply(X, is.factor))
+	factor.names <- predictors[are.factors] 
 	# Factor data frame, with appropriate contrasts
 	factor.frame <- expand.grid(lapply(X[are.factors],"levels"))
 	for (f in factor.names){
@@ -539,8 +537,11 @@ testFactors.lme <- function(model, ...){
 
 ## MER METHOD (equal to default, but adjusted means are transformed if suitable)
 testFactors.mer <- function(model, ..., link=FALSE){
+	if (!as.logical(model@dims["LMM"]) && length(model@muEta) == 0){
+	stop("Nonlinear Mixed Models are not supported.")
+	}
 	result <- testFactors.default(model,...)
-	if (isGLMM(model)){
+	if (length(model@muEta > 0)){
 		attr(result,"means") <- if (link) "link" else "mean"
 		if (!link){
 			terms.with.means <- (lapply(result$terms,"[[","numeric.variables")=="(Intercept)")
@@ -552,6 +553,25 @@ testFactors.mer <- function(model, ..., link=FALSE){
 	class(result) <- c("testFactors.mer","testFactors")
 	return(result)
 }
+
+## MERMOD METHOD (equal to default, but adjusted means are transformed if suitable)
+testFactors.merMod <- function(model, ..., link=FALSE){
+	if (is(model, "nlmerMod")){stop("Nonlinear Mixed Models are not supported.")}
+	result <- testFactors.default(model,...)
+	if (is(model, "lmerMod")) attr(result,"means") <- "mean"
+	if (is(model, "glmerMod")){
+		attr(result,"means") <- if (link) "link" else "mean"
+		if (!link){
+			terms.with.means <- (lapply(result$terms,"[[","numeric.variables")=="(Intercept)")
+			for (term in which(terms.with.means)){
+				result$terms[[term]]$adjusted.values <- getFamily(model)$linkinv(result$terms[[term]]$adjusted.values)
+			}
+		}
+	}
+	class(result) <- c("testFactors.merMod","testFactors")
+	return(result)
+}
+
 
 testFactors <- function(model,...){UseMethod("testFactors")}
 

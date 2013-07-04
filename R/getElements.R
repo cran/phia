@@ -17,18 +17,17 @@ getModelMatrix <- function(model){UseMethod("getModelMatrix")}
 
 # Method analogous to coef.lm
 getCoef.default <- function(model){coef(model)}
-getCoef.lme <- function(model){fixef(model)}
-getCoef.mer <- function(model){fixef(model)}
+getCoef.merMod <- getCoef.mer <- getCoef.lme <- function(model){fixef(model)}
 getCoef <- function(model){UseMethod("getCoef")}
 
 # Method for obtaning factor levels from model
 getXLevels.default <- function(model){model$xlevels}
 getXLevels.lme <- function(model){lapply(model$contrasts, rownames)}
-getXLevels.mer <- function(model){
-	mf <- model.frame(model)
-	predictor.classes <- attr(terms(mf),"dataClasses")[-1]
-	are.factors <- (predictor.classes %in% c("factor","ordered"))
-	lapply(mf[names(predictor.classes)[are.factors]],"levels")
+getXLevels.merMod <- getXLevels.mer <- function(model){
+	predictors <- all.vars(terms(model))[-1]
+	mf <- model.frame(model)[predictors]
+	are.factors <-sapply(mf, is.factor)
+	lapply(mf[are.factors],"levels")
 }
 getXLevels <- function(model){UseMethod("getXLevels")}
 
@@ -37,9 +36,9 @@ getContrasts <- function(model){attr(getModelMatrix(model),"contrasts")}
 
 # Method for defining the error family (in glm or glmm)
 getFamily.default <- function(model){NULL}
-getFamily.glm <- function(model){family(model)}
+getFamily.merMod <- getFamily.glm <- function(model){family(model)}
 getFamily.mer <- function(model){
-	if (isGLMM(model)){
+	if (length(model@muEta > 0)){ # isGLMM
 		# Get family from function call
 		fam <- getCall(model)$family
 		# If it was a character string, try get the appropriate function
