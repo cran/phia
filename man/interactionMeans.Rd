@@ -14,7 +14,7 @@ interactionMeans(model, factors=names(xlevels), slope=NULL, \dots)
   cex.legend=1, abbrev.levels=FALSE, type="b", pch=0:6, \dots)
 }
 \arguments{
-  \item{model}{fitted model. Currently supported classes are \code{"lm"}, \code{"glm"}, \code{"mlm"}, \code{lme}, and \code{mer} (excluding models fitted by \code{nlmer}).}
+  \item{model}{fitted model. Currently supported classes include \code{"lm"}, \code{"glm"}, \code{"mlm"}, \code{"lme"}, and \code{"mer"} or \code{"merMod"} (excluding models fitted by \code{nlmer}).}
   \item{factors}{character vector with the names of interacting factors.  All the factors of the model are used by default; use \code{NULL} for calculating the overall mean.}
   \item{slope}{character vector with the names of the interacting covariates associated to the slope that will be represented; if it is \code{NULL} (the default value), the function will calculate adjusted mean values.}
   \item{x}{an object created by the function \code{interactionMeans}.}
@@ -30,7 +30,7 @@ interactionMeans(model, factors=names(xlevels), slope=NULL, \dots)
   \item{\dots}{further arguments passed to \code{\link{testFactors}} or \code{\link{matplot}}.}
 }
 \details{
-This function calculates the adjusted values of the model for interactions between factors, at fixed values of covariates, if they exist.  The main or crossed effect of covariates is represented by their \dQuote{slope}, i.e. the variation rate of the response with respect to the product of the specified covariates.  The default value of the covariates is their average in the model data frame, and it can be changed by the argument \code{covariates} passed down to \code{\link{testFactors}}.  Note that in generalized linear models, slopes are referred to the link function, not to the mean (see \code{\link{testFactors}} for details, and how to force the calculation of the link function instead of the response for adjusted means).
+This function calculates the adjusted values of the model for interactions between factors, at fixed values of covariates, if they exist.  The main or crossed effect of covariates is represented by their \dQuote{slope}, i.e. the variation rate of the response with respect to the product of the specified covariates.  The default value of the covariates (and of the offset, if any) is their average in the model data frame, and it can be changed by the arguments \code{covariates} or \code{offset}, passed down to \code{\link{testFactors}}.  Note that in generalized linear models, slopes are referred to the link function, not to the mean (see \code{\link{testFactors}} for details, and how to force the calculation of the link function instead of the response for adjusted means).
 
 In multivariate linear models, the adjusted means or slopes are calculated separately for each column by default, but it is possible to define an intra-subjects design of factors across columns, and put all columns in one.  This may be defined by the argument \code{idata} passed down to \code{\link{testFactors}} (see \code{\link{Anova}} or \code{\link{linearHypothesis}} in package \pkg{car} for further details).  If such transformation is done, it is also possible to include the factors of the intra-subjects design in \code{factors}, for calculating their main effects or interactions. 
 
@@ -80,8 +80,8 @@ hour <- ordered(rep(1:5, 3))
 idata <- data.frame(phase, hour)
 
 # Calculate all interactions, but plot only the interactions between
-# hour (represented in the x-axis) and the other factors (in lines)
+# hour (represented in the x-axis) and the other factors (in traces)
 
 means.ok <- interactionMeans(mod.ok, idata=idata)
-plot(means.ok, atx="hour", lines=c("gender","treatment","phase"))
+plot(means.ok, atx="hour", traces=c("gender","treatment","phase"))
 }

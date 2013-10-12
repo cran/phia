@@ -604,51 +604,35 @@ the other.
 \item For \code{medication}: placebo vs. any real dose, the minimum dose
 vs. the maximum, and the medium dose vs. the average of all doses.
 \end{enumerate}
-These contrasts can be defined by the following vectors of coefficients,
-ordered as the factor levels:
 
-<<>>=
-cntrl.vs.all <- c(2, -1, -1)     # Control vs. both therapies
-T1.vs.T2 <- c(0, 1, -1)          # Therapy T1 vs. T2
-plcb.vs.all <- c(3, -1, -1, -1)  # Placebo vs. all doses
-D1.vs.D3 <- c(0, 1, 0, -1)       # Min. dose vs. max.
-D2.vs.avrg <- c(0, -1, 2, -1)    # Med. dose vs. average
-@
-
-Now, \code{testInteractions} allows to define such custom
+The function \code{testInteractions} also allows to define such custom
 contrasts, via the argument \code{custom}. This argument must be
 a named list of matrices, one per factor, with the vectors of coefficients
-arranged in columns. So we build those matrices, and although it is
-not necessary, we also assign names to their rows for the sake
-of clarity, and normalize the columns to get all the results
-in the same scale.%
+that define the contrasts arranged in columns. The auxiliary function
+\code{contrastCoefficients} provides a convenient interface to generate that
+list, from symbolic formulas that represent the contrasts:%
 \footnote{These matrices are transformed combinations of Helmert and polynomial
 contrasts, so they could have been defined by the functions \code{contr.helmert}
 and \code{contr.poly} as well.%
 }
 
 <<>>=
-therapy.contr <- cbind(cntrl.vs.all, T1.vs.T2)
-medication.contr <- cbind(plcb.vs.all, D1.vs.D3, D2.vs.avrg)
-# Add row names
-rownames(therapy.contr) <- levels(Boik$therapy)
-rownames(medication.contr) <- levels(Boik$medication)
-# Normalize columns, so that their norm is 1
-normrows <- sqrt(colSums(therapy.contr^2))
-therapy.contr <- sweep(therapy.contr, 2, normrows, "/")
-normrows <- sqrt(colSums(medication.contr^2))
-medication.contr <- sweep(medication.contr, 2, normrows, "/")
+(custom.contr <- contrastCoefficients(
+therapy ~ control - (T1 + T2)/2,          # Control vs. both therapies
+therapy ~ T1 - T2,                        # Therapy T1 vs. T2
+medication ~ placebo - (D1 + D2 + D3)/3,  # Placebo vs. all doses
+medication ~ D1 - D3,                     # Min. dose vs. max
+medication ~ D2 - (D1 + D2 + D3)/3,       # Med. dose vs. average
+data=Boik, normalize=TRUE))               # Normalize to homogeinize the scale
 @
 
-Thus we make the list that will be passed to \code{testInteractions}:
+Then use this list to define the contrasts in \code{testInteractions}
+(after renaming the columns of the matrices for a clearer interpretation of
+the output):
 
 <<>>=
-(custom.contr <- list(therapy=therapy.contr, medication=medication.contr))
-@
-
-And then we use this list to define the contrasts in \code{testInteractions}:
-
-<<>>=
+names(custom.contr$therapy) <- c("cntrl.vs.all", "T1.vs.T2")
+names(custom.contr$medication) <- c("plcb.vs.all", "D1.vs.D3", "D2.vs.avg")
 testInteractions(mod.boik,custom=custom.contr)
 @
 
@@ -799,7 +783,7 @@ as proposed by Keselman \cite{keselman_testing_1998}. The reader
 is encouraged to try these alternatives.
 
 
-\section{Models with covariates\label{sec:covariates}}
+\section{Linear models with covariates\label{sec:covariates}}
 
 Data sets may include numeric predictors, as mentioned in section \ref{sec:maths-interactions}.
 When combined with factors, they are called \emph{covariates} and
@@ -816,10 +800,10 @@ package \pkg{effects} evaluate the adjusted mean of the response
 at a sample of values of the covariates, either automatically calculated
 by the function or specified by the user.
 
-However, we have seen that the effects of factors may also be analysed
-by the contrasts between levels. Obviously, for covariates there are
-infinite possible contrasts as well, although they are constrained by
-the d.o.f. of the model. Let us take a pure linear regression model
+We have seen that in factorial models, the effects of factors may be analysed
+by the contrasts between their levels. Obviously, the number of ``contrasts''
+between possible values of a covariate would be infinite, although they are
+constrained by the d.o.f. of the model. Let us take a pure linear regression model
 without factors, and two covariates that do not interact:
 
 \begin{equation}
@@ -827,7 +811,7 @@ Y_{i}=\beta_{0}+\beta_{1}X_{1i}+\beta_{2}X_{2i}+\varepsilon_{i}\end{equation}
 
 
 For the effect of $X_{1}$, there are infinite pairs of values $X_{1a}\neq X_{1b}$
-at which we could estimate ``contrasts'', but the expected value of the
+at which we could estimate such ``contrasts'', but the expected value of the
 result would always be proportional to the difference between $X_{1a}$
 and $X_{1b}$. The ratio between both differences would be equal to
 the derivative of $E\left(Y\right)$ with respect to $X_{1}$, which
@@ -846,50 +830,39 @@ of the response for different values of the covariate, as given by
 the functions of \pkg{effects}, the only additional information
 that he or she needs is the adjusted mean at an arbitrary point.
 
-The functions of the package \pkg{phia} only report the values of the
+The functions of the package \pkg{phia} can report the values of those
 slopes. Let us take the model for the prestige of Canadian occupations,
-defined in \cite{Fox-CAR2011}, p. 165. We will use the data set \code{Prestige}
-from \pkg{car}, that contains several variables related to
-102 different occupations:
+defined in \cite{Fox-CAR2011}, p. 165. That model uses the data set \code{Prestige}
+from \pkg{car}, that contains several variables related to 102 different occupations:
 
 <<>>=
 str(Prestige)
-@
+@	
 
-The variables that we will use are \code{prestige} (prestige score),
-\code{education} (average years of education), \code{income} (average
-income), and the factor \code{type}, that has three levels: \code{bc}
-(blue collar), \code{prof} (professional), and \code{wc} (white
-collar). As recommended in the source of this example, we will log-transform
-\code{income}, in order to obtain a more normal behaviour of that
-variable. However, mathematical operators in the model formula may
-confuse the functions of \pkg{phia}, so we will do this
-transformation in the data frame:
-
-<<>>=
-Prestige$log.income <- log2(Prestige$income)
-@
-
-We will consider a model with a linear relation between \code{prestige}
-and the covariates \code{log.income} (transformed \code{income})
-and \code{education}, with different responses for the three types
+In this model, the prestige score of each profession (\code{prestige}) is fitted
+to a linear model that depends on \code{education} (average years of education),
+\code{income} (average income), and the factor \code{type}, that has three levels:
+\code{bc} (blue collar), \code{prof} (professional), and \code{wc} (white
+collar). The two former variables are continuous covariates (\code{income}
+transformed to logarithmic scale to improve the normality of the residuals),
+with different responses for the three types
 of ocupation (an interaction with \code{type}). We fit this model
 and do an ANOVA of it:
 
 <<>>=
-mod.prestige <- lm(prestige ~ (log.income+education)*type, data=Prestige)
+mod.prestige <- lm(prestige ~ (log2(income)+education)*type, data=Prestige)
 Anova(mod.prestige)
 @
 
-This analysis reveals a significant main effect of \code{education},
-and a significant interaction between \code{type} and \code{log.income},
-which we can explore with \code{interactionMeans} (see figure \ref{fig:interaction-covariates})
-and test with \code{testInteractions}, by just giving the name of the
+This analysis detects significant main effects of all the predictors, plus a
+significant interaction between \code{log2(income)} and the factor \code{type}.
+This interaction can explored with \code{interactionMeans} (see figure \ref{fig:interaction-covariates})
+and tested with \code{testInteractions}, by just giving the name of the
 relevant covariate(s) in the argument \code{slope}.
 
 <<prestigeplot>>=
-plot(interactionMeans(mod.prestige, "type", slope="log.income"))
-testInteractions(mod.prestige, pairwise="type", slope="log.income")
+plot(interactionMeans(mod.prestige, "type", slope="log2(income)"))
+testInteractions(mod.prestige, pairwise="type", slope="log2(income)")
 @
 %
 \begin{figure}
@@ -898,11 +871,11 @@ testInteractions(mod.prestige, pairwise="type", slope="log.income")
 <<prestigeplot>>
 @
 \par\end{centering}
-\caption{Plot of the interaction \code{log.income:type\label{fig:interaction-covariates}}}
+\caption{Plot of the interaction \code{log2(income):type\label{fig:interaction-covariates}}}
 \end{figure}
 
 The plot and ANOVA table show the adjusted values of the slope with
-respect to \code{log.income} (instead of the adjusted mean of the
+respect to \code{log2(income)} (instead of the adjusted mean of the
 response), for the levels and contrasts of the factor \code{type}.
 That slope, i.e. the proportional relation between the occupation's
 income and its prestige, is greater for blue collar occupations, whereas
@@ -932,25 +905,25 @@ and the slope for $X_{2}$ is $\left(\beta_{2}+\beta_{12}X_{1}\right)$.
 
 This means that the results of previous calculations may depend on
 the values of the other covariates. For instance, let us take another
-model for the \code{Prestige} data, where we consider that \code{log.income}
+model for the \code{Prestige} data, where we consider that \code{log2(income)}
 and \code{education} can interact (the influence of the occupation's
 income may vary with the average years of education), and we discard
 the data of white collar occupations to have a more balanced design
 and simpify things.
 
 <<>>=
-mod.prestige2 <- update(mod.prestige, formula=.~.+(log.income:education)*type,
+mod.prestige2 <- update(mod.prestige, formula=.~.+(log2(income):education)*type,
 subset=(Prestige$type!="wc"))
 Anova(mod.prestige2)
 @
 
 The significant effects shown by the ANOVA table are the same as for
-the previous model, including the interaction \code{log.income:type}.
+the previous model, including the interaction \code{log2(income):type}.
 And since \code{type} now has only two levels, the post-hoc test
 of that interaction gives virtually the same result as that table:
 
 <<>>=
-testInteractions(mod.prestige2, pairwise="type", slope="log.income")
+testInteractions(mod.prestige2, pairwise="type", slope="log2(income)")
 @
 
 However, the algorithm used by this test (the function \code{testFactors})
@@ -962,17 +935,17 @@ other arbitrary values, using the extra argument \code{covariates}
 that is passed down to \code{testFactors}. This argument may contain
 a named numeric vector with the custom values of any covariate. For
 instance, we might want to set \code{education} at its 75th quantile,
-and see what happens with the interaction \code{log.income:type}.
+and see what happens with the interaction \code{log2(income):type}.
 
 <<>>=
 # Look quantiles of the model frame (a subset of the original data)
 quantile(model.frame(mod.prestige2)$education)
-testInteractions(mod.prestige2, pairwise="type", slope="log.income",
+testInteractions(mod.prestige2, pairwise="type", slope="log2(income)",
 covariates=c(education=14))
 @
 
 Altering the value of \code{education} has substantially changed
-the result of the test on a term that contains \code{log.income},
+the result of the test on a term that contains \code{log2(income)},
 because of the interaction between both covariates. See, however,
 that this interaction, and other terms that contain it, are not significant
 according to the ANOVA of the model. So it could be wise to simplify
@@ -1150,7 +1123,10 @@ differences''. In other words, the figure \code{0.47} in the column
 \code{Value} for the mentioned interaction contrast means that the
 proportion of females vs. males in {}``first-class'' public universities
 is $0.47$ times (less than half) the proportion in {}``second-class''
-universities.
+universities. For other families of GLM, the interpretation of the contrasts
+in the domain of the response variable may be more obscure; so if desired,
+the argument \code{link=TRUE} may be used in all the functions of \pkg{phia}
+to force the representation of the adjusted values in the domain of the link function.
 
 GLM may include covariates, and the analysis of interactions may involve
 terms that contain them. In that case, the means and contrasts reported
@@ -1304,8 +1280,8 @@ names(Snijders) <-
 @
 
 Following Snijders and Bosker, for a better model fit we will also include
-quadratic components of IQ around $0$ (remember that the \code{IQ} variable is centered),
-with the same sign as the IQ value \cite[p.~122]{Snijders1999}.
+quadratic components of IQ around $0$ (remember that the \code{IQ} variable is
+centered) \cite[p.~113]{Snijders1999}.
 
 <<>>=
 Snijders$IQ2.pos <- with(Snijders, (IQ > 0)*IQ^2)

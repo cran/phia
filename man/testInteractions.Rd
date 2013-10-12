@@ -12,7 +12,7 @@ testInteractions(model, pairwise=NULL, fixed=NULL, residual=NULL, across=NULL,
   abbrev.levels=FALSE, \dots)
 }
 \arguments{
-  \item{model}{fitted model. Currently supported classes are \code{"lm"}, \code{"glm"}, \code{"mlm"}, \code{lme}, and \code{mer} (excluding models fitted by \code{nlmer}).}
+  \item{model}{fitted model. Currently supported classes include \code{"lm"}, \code{"glm"}, \code{"mlm"}, \code{"lme"}, and \code{"mer"} or \code{"merMod"} (excluding models fitted by \code{nlmer}).}
   \item{pairwise}{character vector with the names of factors represented by pairwise contrasts.}
   \item{fixed}{character vector with the names of factors represented by fixed levels.}
   \item{residual}{character vector with the names of factors represented by residuals effects.}
@@ -31,9 +31,10 @@ Each factor of the model can at most be contained in one of the arguments \code{
   \item{The factors contained in \code{fixed} will appear as one of their possible levels.}
   \item{The factors contained in \code{residual} will appear as residual effects of their levels, after removing effects of higher order.}
   \item{The factors contained in \code{across} will appear as a full set of contrasts. By default they will be orthogonal contrasts, unless overriden by the contrasts of the model data frame or by the arguments passed down to \code{\link{testFactors}}.  See the documentation of that function for further details.}
-  \item{Ommitted factors will be averaged across all their levels.}
 }
-Other combinations of factor levels can be defined by \code{custom}.  This argument should be a list of numeric matrices, named as model factors; this list can also contain vectors, that will be treated as column matrices.  Each matrix must have as many rows as the number of levels of the corresponding factor, so that each column represents a linear combination of such levels.  These matrices can be, for instance, the contrast matrices returned by \code{\link{contrasts}}, but using such matrices does not give the same result as using the argument \code{across}; each test uses a different column of the matrices defined in \code{custom}, instead of the full set of contrasts.
+Ommitted factors will be averaged across all their levels. Thus, to test the overall adjusted means or slopes, use \code{pairwise=NULL} (or do the same with any of the arguments of the previous list).
+
+Other combinations of factor levels can be defined by \code{custom}.  This argument should be a list of numeric matrices or vectors, named as the model factors.  Each matrix must have as many rows as the number of levels of the corresponding factor, so that each column represents a linear combination of such levels that will be tested, crossed with the combinations of the other factors.  Vectors will be treated as column matrices.
 
 In multivariate linear models it is possible to define an intra-subjects design, with the argument \code{idata} passed down to \code{\link{testFactors}} (see \code{\link{Anova}} or \code{\link{linearHypothesis}} in package \pkg{car} for further details).  The factors defined by that argument can be included as any other factor of the model.
 }
@@ -45,6 +46,7 @@ Helios De Rosario-Martinez, \email{helios.derosario@ibv.upv.es}
 }
 \seealso{
 \code{\link{testFactors}}, \code{\link{interactionMeans}}.
+Use \code{\link{contrastCoefficients}} as a facility to create matrices of custom contrasts.
 }
 \note{The tests of mixed models are done under the assumption that the estimation of the random part of the model is exact.}
 \examples{
@@ -55,7 +57,7 @@ mod.boik <- lm(edr ~ therapy * medication, data=Boik)
 Anova(mod.boik)
 cntrl.vs.T1 <- list(therapy = c(1, -1, 0))
 cntrl.vs.T2 <- list(therapy = c(1, 0, -1))
-plcb.vs.doses <- list(medication = c(3, -1, -1, -1))
+plcb.vs.doses <- list(medication = c(1, -1/3, -1/3, -1/3))
 testInteractions(mod.boik, pairwise="therapy", adjustment="none")
 testInteractions(mod.boik, custom=plcb.vs.doses, adjustment="none")
 testInteractions(mod.boik, custom=cntrl.vs.T1, across="medication", adjustment="none")

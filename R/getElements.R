@@ -21,13 +21,17 @@ getCoef.merMod <- getCoef.mer <- getCoef.lme <- function(model){fixef(model)}
 getCoef <- function(model){UseMethod("getCoef")}
 
 # Method for obtaning factor levels from model
-getXLevels.default <- function(model){model$xlevels}
+getXLevels.lm <- function(model){model$xlevels}
 getXLevels.lme <- function(model){lapply(model$contrasts, rownames)}
-getXLevels.merMod <- getXLevels.mer <- function(model){
-	predictors <- all.vars(terms(model))[-1]
+# Extract factors from a list (use it in the default method)
+getXLevels.list <- function(fr){
+	are.factors <- sapply(fr, is.factor)
+	lapply(fr[are.factors], "levels")
+}
+getXLevels.default <- function(model){
+	predictors <- getPredictors(model)
 	mf <- model.frame(model)[predictors]
-	are.factors <-sapply(mf, is.factor)
-	lapply(mf[are.factors],"levels")
+	getXLevels.list(mf)
 }
 getXLevels <- function(model){UseMethod("getXLevels")}
 
@@ -52,3 +56,23 @@ getFamily.mer <- function(model){
 	}else return(NULL)
 }
 getFamily <- function(model){UseMethod("getFamily")}
+
+# Method for obtaining a character vector of the model predictors,
+# excluding offsets
+getPredictors <- function(model){
+	modterms <- terms(model)
+	model.variables <- as.character(attr(modterms,"variables"))[-1]
+	model.variables[-c(attr(modterms,"response"), attr(modterms,"offset"))]
+}
+
+# get offset variable, if any
+getOffset.lm <- getOffset.glm <- function(model){model$offset}
+getOffset.mer <- function(model){model@offset}
+getOffset.merMod <- function(model){getME(model,"offset")}
+getOffset.default <- function(model){
+	modterms <- terms(model)
+	if (!is.null(offpos <- attr(modterms, "offset"))){
+		with(eval(getCall(model)$data), eval(languageEl(attr(terms(model), "variables"), offpos+1L)))
+	}else NULL
+}
+getOffset <- function(model){UseMethod("getOffset")}

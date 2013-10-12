@@ -1,3 +1,29 @@
+2013-10-12 Helios De Rosario-Martinez<helios.derosario@ibv.upv.es>
+
+* R/contrastCoefficients.R: Calculate vectors of contrast coefficients.
+
+* R/ctb.R: Contributed code that cannot be imported from other packages.
+
+* R/getElements.R (getPredictors): new function to manage models with offset
+(getXLevels.list): new method.
+
+* R/interactionMeans.R (plot.interactionMeans): fixed bug for some glm families
+(interactionMeans): use new function getPredictors
+
+* R/testFactors.R
+(setNumericPredictors, testFactors.mlm, testFactors.default):
+Refactorized functions, with support for calculated predictors and offset.
+Removed calls to "stats:::" functions.
+
+* man: Documentation updated.
+
+* vignette: Vignette updated
+
+* DESCRIPTION: remove "car" from Imports.
+Authors redefined as Authors@R
+
+* Version 0.1-4.
+
 2013-07-04 Helios De Rosario-Martinez <helios.derosario@ibv.upv.es>
 
 * R/testFactors.R (testFactors.merMod): New method.

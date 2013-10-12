@@ -65,23 +65,6 @@ testInteractions <- function(model, pairwise=NULL, fixed=NULL, residual=NULL, ac
 	combination.labels <- character()
 	# Define the rownames for the different tests, from column names of contrast matrices
 	for (fname in names(tested.contrasts)){
-#		cont.matrix <- tested.contrasts[[fname]]
-#		# Abbreviate cont.matrix and append factor name if required
-#		if (abbrev.levels && is.character(cont.matrix)){
-#			if (is.logical(abbrev.levels)){
-#				cont.matrix <- matrix(abbreviate(cont.matrix),nrow(cont.matrix))
-#			}else cont.matrix <- matrix(abbreviate(cont.matrix,minlength=abbrev.levels),nrow(cont.matrix))
-#		}
-#		if (label.factors) cont.matrix <- matrix(paste(fname,cont.matrix,sep=""),nrow(cont.matrix))
-#		cont.combinations <- combinations[,fname]
-#		if (is.character(cont.matrix)){
-#			column.labels <- switch(nrow(cont.matrix),
-#				"1L" = cont.matrix[cont.combinations],
-#				"2L" = paste(cont.matrix[1,cont.combinations],cont.matrix[2,cont.combinations],sep="-"),
-#				paste(fname,cont.combinations,sep=""))
-#			if (fname %in% residual) column.labels <- paste(column.labels,"(resid.)")
-#		}else column.labels <- paste(fname,cont.combinations,sep="")
-#		combination.labels <- paste(combination.labels, format(column.labels,justify="right"), sep=" : ")
 		cont.combinations <- combinations[,fname]
 		cont.names <- colnames(tested.contrasts[[fname]])
 		# Append factor name if required

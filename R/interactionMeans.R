@@ -19,7 +19,7 @@ interactionMeans <- function(model, factors=names(xlevels), slope=NULL, ...){
 		slope.term <- NULL
 	}else{
 		# Check predictors specified in the arguments
-		model.variables <- all.vars(formula(terms(model))[[3]])
+		model.variables <- getPredictors(model)
 		numeric.predictors <- model.variables[!(model.variables %in% names(xlevels))]
 		specified.numeric <- match(slope,numeric.predictors)
 		if (any(is.na(specified.numeric))) warning("Some covariates are not in the model and will be ignored.")
@@ -86,7 +86,7 @@ plot.interactionMeans <- function(x, atx=attr(x,"factors"), traces=atx, multiple
 	fam <- NULL
 	if (transform <- (!is.null(fam <- attr(x,"family")) && attr(x,"term")=="(Intercept)")){
 		yy <- attr(x,"values")
-		x[yy] <- fam$linkfun(x[yy])
+		x[[yy]] <- fam$linkfun(x[[yy]])
 	}
 	# Calculate and apply margin-plot regions ratio
 	marginRatio <- function(n,prop) n*prop/(1-prop)

@@ -1,4 +1,4 @@
-export(interactionMeans, testFactors, testInteractions)
+export(contrastCoefficients, interactionMeans, testFactors, testInteractions)
 import(car)
 S3method(testFactors, lm)
 S3method(testFactors, mlm)

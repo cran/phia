@@ -1,7 +1,42 @@
 ## AUXILIARY FUNCTIONS
 
+# setNumericPredictors() defines the values of numeric predictors (covariates and offset)
+setNumericPredictors <- function(model, numeric.predictors, covariates=NULL, offset=NULL){
+	mf <- getModelFrame(model)
+	if (length(numeric.predictors) > 0){
+		# If no covariates were specified by the user, use the default (average)
+		if (is.null(covariates)){
+			covariates <- colMeans(mf[numeric.predictors])
+		}else{
+			# If covariates have names, complete with default (ignoring covariates that are not in the model)
+			covariate.names <- names(covariates)
+			if (!is.null(covariate.names)){
+				valid.covariates <- covariate.names %in% numeric.predictors
+				if (!all(valid.covariates)) warning("Some covariates are not in the model, and will be ignored.")
+				user.covariates <- covariates[valid.covariates]
+				covariates <- colMeans(mf[numeric.predictors])
+				covariates[names(user.covariates)] <- user.covariates
+			}else{
+				# If they are unnamed, assign them in the default order of the model, after adjusting the length of the vector
+				covariates = rep(covariates,length=length(numeric.predictors))
+				names(covariates) <- numeric.predictors
+			}
+		}
+	} else covariates <- NULL
+	# Offset (if any)
+	offsetvar <- getOffset(model)
+	if (length(offsetvar) > 0){
+		# If no offset value is specified by the user, use the default (average)
+		offsetvalue <- if(is.null(offset)) mean(offsetvar) else offset
+	}else{
+		offsetvalue <- 0
+		if (!is.null(offset)) warning("The model does not contain an offset. Offset argument will be ignored.")
+	}
+	list(covariates=covariates,offsetvalue=offsetvalue)
+}
+
 # addPredictorsToFrame() is used to include covariates in a data frame
-# of factor combinations
+# of factor combinations. Add offset value, if any
 addPredictorsToFrame <- function(factor.frame, numeric.predictors, term){
 	if (length(numeric.predictors) > 0){
 		# Repeat the numeric values along the rows of the between-subjects data frame
@@ -17,12 +52,26 @@ addPredictorsToFrame <- function(factor.frame, numeric.predictors, term){
 # defineLHT() makes the first approximation to the Linear Hypothesis Matrix
 # If the model has predictors, define L according to the model formula
 defineLHT <- function(model,term,factor.frame){
+	tm <- terms(model)
 	if (nrow(factor.frame)){
-		rhf <- formula(terms(model))[c(1,3)]
+		# rhf <- formula(terms(model))[c(1,3)] # 0.1-3 definition (included offset)
+		# Define right-hand side of the model formula,
+		# with masked names of predictors to avoid "AsIs", etc.
+		predictors <- names(factor.frame)
+		masked.predictors <- make.names(predictors, unique=TRUE)
+		masked.terms <- attr(tm, "term.labels")
+		# Masking
+		for (p in which(predictors != masked.predictors)){
+			masked.terms <- gsub(predictors[p], masked.predictors[p], masked.terms, fixed=TRUE)
+		}
+		rhf <- paste(c(attr(tm,"intercept"), masked.terms), collapse= "+")
+		rhf <- as.formula(paste("~", rhf))
+		names(factor.frame) <- masked.predictors
 		L <- model.matrix(rhf, data=factor.frame)
+		colnames(L) <- rownames(as.matrix(getCoef(model)))
 	# Otherwise, L is defined to just get the intercept
 	}else{
-		if (!attr(terms(model),"intercept")) stop("Null model (no predictors or intercept).")
+		if (!attr(tm,"intercept")) stop("Null model (no predictors or intercept).")
 		L <- matrix(1,dimnames=list(NULL,"(Intercept)"))
 	}
 	# If the term to analyse is not the intercept,
@@ -30,7 +79,7 @@ defineLHT <- function(model,term,factor.frame){
 	if (term$num.vars[1] != "(Intercept)"){
 		# This matrix tells what terms are affected by each variable
 		# We choose the rows for the variables in the selected term
-		terms.matrix <- attr(terms(model),"factors")[term$num.vars,,drop=F]
+		terms.matrix <- attr(tm,"factors")[term$num.vars,,drop=F]
 		# Only the columns where all variables are present are of interest to us
 		affected.terms <- which(apply(terms.matrix,2,"all"))
 		# The attribute "assign" of the model matrix tells what coefficents are related to each term,
@@ -178,14 +227,14 @@ makeT <- function(frame,factor.names,levels){
 ## MAIN PROCEDURE
 
 ## MLM METHOD
-testFactors.mlm <- function(model,levels,covariates,terms.formula=~1,inherit.contrasts=FALSE,default.contrasts=c("contr.sum","contr.poly"),idata,icontrasts=default.contrasts,lht=TRUE,...){	
+testFactors.mlm <- function(model,levels,covariates,offset,terms.formula=~1,inherit.contrasts=FALSE,default.contrasts=c("contr.sum","contr.poly"),idata,icontrasts=default.contrasts,lht=TRUE,...){	
 	
 	# 1. Make complete list of variables, and between/within-subjects data frames
 	if (missing(idata)){
-		model.variables <- all.vars(formula(model)[[3]])
+		model.variables <- getPredictors(model)
 		within.frame <- NULL
 	}else{
-		model.variables <- c(all.vars(formula(model)[[3]]),names(idata))
+		model.variables <- c(getPredictors(model),names(idata))
 		# Check for duplicates
 		if (any(duplicated(model.variables))) stop("There are redundant variables in the terms of the model")
 		within.frame <- idata
@@ -226,34 +275,24 @@ testFactors.mlm <- function(model,levels,covariates,terms.formula=~1,inherit.con
 	factor.nlevels <- lapply(factor.nlevels,"as.list")
 	contrast.mat[not.mat] <- mapply(do.call,factor.contrasts[not.mat],factor.nlevels[not.mat],SIMPLIFY=FALSE)
 
-	# 2. Set the values of numeric predictors (covariates)
+	# 2. Set the values of numeric predictors (covariates and offset)
 	# They are the variables from the model, excluding the response and factors
 	numeric.predictors <- model.variables[!(model.variables %in% c(between.factors,within.factors))]
-	# Set the values of covariates, if they exist
-	if (length(numeric.predictors) > 0){
-		# If no covariates are specified by the user, use the default (average)
-		if (missing(covariates)){
-			covariates <- colMeans(model$model[numeric.predictors])
-		}else{
-			# If covariates have names, complete with default (ignoring covariates that are not in the model)
-			covariate.names <- names(covariates)
-			if (!is.null(covariate.names)){
-				valid.covariates <- covariate.names %in% numeric.predictors
-				if (!all(valid.covariates)) warning("Some covariates are not in the model, and will be ignored.")
-				user.covariates <- covariates[valid.covariates]
-				covariates <- colMeans(model$model[numeric.predictors])
-				covariates[names(user.covariates)] <- user.covariates
-			}else{
-				# If they are unnamed, assign them in the default order of the model, after adjusting the length of the vector
-				covariates = rep(covariates,length=length(numeric.predictors))
-				names(covariates) <- numeric.predictors
-			}
-		}
-	} else covariates <- NULL
+	nv <- setNumericPredictors(model, numeric.predictors,
+		if(!missing(covariates)) covariates, if(!missing(offset)) offset)
+	covariates <- nv$covariates
+	offsetvalue <- nv$offsetvalue
 
 	# 3. Redefine levels into a list of numeric matrices
 	# Ignore elements in levels that are not factors of the models
 	if (missing(levels)) levels <- NULL	else{
+		# See if contrastCoefficients must be applied
+		if (is.null(names(levels))){
+			levels <- do.call("contrastCoefficients", c(levels, list(data=model$model)))
+		}else{
+			gotnames <- as.logical(sapply(names(levels), nchar))
+			levels[!gotnames] <- do.call("contrastCoefficients", c(levels[!gotnames], list(data=model$model)))
+		}
 		valid.levels <- names(levels) %in% c(between.factors, within.factors)
 		if (!all(valid.levels)) warning("Some variables in levels are not model factors, and will be ignored.")
 		levels <- levels[valid.levels]
@@ -280,8 +319,8 @@ testFactors.mlm <- function(model,levels,covariates,terms.formula=~1,inherit.con
 	}
 	# term is a list with the variables that will change in each analysis
 	# test.result will contain the results of the analysis 
-	term <- vector("list",6L)
-	names(term) <- c("num.vars","fac.vars","levels","between.factors","within.factors","covariates")
+	term <- vector("list",7L)
+	names(term) <- c("num.vars","fac.vars","levels","between.factors","within.factors","covariates","offset")
 	test.result <- vector("list", length(split.user.terms))
 	names(test.result) <- user.terms.labels
 	# Repeat for each term:
@@ -293,6 +332,7 @@ testFactors.mlm <- function(model,levels,covariates,terms.formula=~1,inherit.con
 		term$between.factors <- between.factors
 		term$within.factors <- within.factors
 		term$covariates <- covariates
+		term$offset <- offsetvalue
 		# Take factors in term, add their contrast matrices to the copy of levels,
 		# and then remove them from the list of term variables,
 		# which now will only contain the covariates of the term;
@@ -335,6 +375,8 @@ testFactorsOnTerm.mlm <- function(model,term,numeric.predictors,between.frame,wi
 	
 	# 2. Preliminary definition of the Linear Hypothesis matrix (L)
 	L <- defineLHT(model,term,between.frame)
+	# (add offset column if available)
+	if (term$offset != 0) L <- cbind(L, term$offset)
 	
 	# 3. Transformed Linear Hypothesis (L) and response transformation (P) matrices
 	if (length(term$between.factors > 0)){
@@ -347,12 +389,17 @@ testFactorsOnTerm.mlm <- function(model,term,numeric.predictors,between.frame,wi
 	}else{
 		P <- if (is.null(term$within.factors)) NULL else matrix(rep(1/nrow(within.frame),nrow(within.frame)))
 	}
+	# (and separate offset)
+	if (term$offset){
+		offset_effect <- L[,ncol(L)]
+		L <- L[,-ncol(L), drop=FALSE]
+	}else offset_effect <- 0
 	
 	# 4. Result, consisting in:
 	#   levels: numeric matrix values of levels
 	#   adjusted.values: table of adjusted means for the tested interactions
 	#   test: test value, from LinearHypothesis
-	adjusted.values <- L %*% model$coefficients
+	adjusted.values <- L %*% model$coefficients + offset_effect
 	if (!is.null(P)){
 		adjusted.values <- adjusted.values %*% P
 		rownames(P) <- colnames(model$coefficients)
@@ -363,10 +410,10 @@ testFactorsOnTerm.mlm <- function(model,term,numeric.predictors,between.frame,wi
 }
 
 ## DEFAULT METHOD
-testFactors.default <- function(model,levels,covariates,terms.formula=~1,inherit.contrasts=FALSE,default.contrasts=c("contr.sum","contr.poly"),lht=TRUE,...){	
+testFactors.default <- function(model,levels,covariates,offset,terms.formula=~1,inherit.contrasts=FALSE,default.contrasts=c("contr.sum","contr.poly"),lht=TRUE,...){	
 
 	# 1. Make complete list of predictor variables, and extract factors
-	predictors <- all.vars(terms(model))[-1]
+	predictors <- getPredictors(model)
 	X <- getModelFrame(model)[predictors]
 	are.factors <- as.logical(sapply(X, is.factor))
 	factor.names <- predictors[are.factors] 
@@ -395,33 +442,23 @@ testFactors.default <- function(model,levels,covariates,terms.formula=~1,inherit
 	factor.nlevels <- lapply(lapply(factor.frame,"nlevels"),"as.list")
 	contrast.mat[not.mat] <- mapply(do.call,factor.contrasts[not.mat],factor.nlevels[not.mat],SIMPLIFY=FALSE)
 	
-	# 2. Set the values of numeric predictors (covariates)
+	# 2. Set the values of numeric predictors (covariates and offset)
 	numeric.predictors <- predictors[!are.factors]
-	# Set the values of covariates, if they exist
-	if (length(numeric.predictors) > 0){
-		# If no covariates are specified by the user, use the default (average)
-		if (missing(covariates)){
-			covariates <- colMeans(X[numeric.predictors])
-		}else{
-			# If covariates have names, complete with default (ignoring covariates that are not in the model)
-			covariate.names <- names(covariates)
-			if (!is.null(covariate.names)){
-				valid.covariates <- covariate.names %in% numeric.predictors
-				if (!all(valid.covariates)) warning("Some covariates are not in the model, and will be ignored.")
-				user.covariates <- covariates[valid.covariates]
-				covariates <- colMeans(X[numeric.predictors])
-				covariates[names(user.covariates)] <- user.covariates
-			}else{
-				# If they are unnamed, assign them in the default order of the model, after adjusting the length of the vector
-				covariates = rep(covariates,length=length(numeric.predictors))
-				names(covariates) <- numeric.predictors
-			}
-		}
-	} else covariates <- NULL
+	nv <- setNumericPredictors(model, numeric.predictors,
+		if(!missing(covariates)) covariates, if(!missing(offset)) offset)
+	covariates <- nv$covariates
+	offsetvalue <- nv$offsetvalue
 	
 	# 3. Redefine levels into a list of numeric matrices
 	# Ignore elements in levels that are not factors of the models
 	if (missing(levels)) levels <- NULL else{
+		# See if contrastCoefficients must be applied
+		if (is.null(names(levels))){
+			levels <- do.call("contrastCoefficients", c(levels, list(data=getModelFrame(model))))
+		}else{
+			gotnames <- as.logical(sapply(names(levels), nchar))
+			levels[!gotnames] <- do.call("contrastCoefficients", c(levels[!gotnames], list(data=getModelFrame(model))))
+		}
 		valid.levels <- names(levels) %in% factor.names
 		if (!all(valid.levels)) warning("Some variables in levels are not model factors, and will be ignored.")
 		levels <- levels[valid.levels]
@@ -434,7 +471,7 @@ testFactors.default <- function(model,levels,covariates,terms.formula=~1,inherit
 	
 	# 4. Analyse each term of the terms.formula
 	# Stop if the variables of the formula are not in the model
-	user.variables <- all.vars(terms.formula)
+	user.variables <- as.character(attr(terms(terms.formula),"variables")[-1])
 	if (!all(user.variables %in% predictors)) stop("The variables in terms.formula are not coherent with the model")
 	# Split the formula in terms, and terms in variables, and add Intercept if suitable
 	user.terms <- terms(terms.formula)
@@ -446,8 +483,8 @@ testFactors.default <- function(model,levels,covariates,terms.formula=~1,inherit
 	}
 	# term is a list with the variables that will change in each analysis
 	# test.result will contain the results of the analysis 
-	term <- vector("list",5L)
-	names(term) <- c("num.vars","fac.vars","levels","factor.names","covariates")
+	term <- vector("list",6L)
+	names(term) <- c("num.vars","fac.vars","levels","factor.names","covariates","offset")
 	test.result <- vector("list", length(split.user.terms))
 	names(test.result) <- user.terms.labels
 	# Repeat for each term:
@@ -458,6 +495,7 @@ testFactors.default <- function(model,levels,covariates,terms.formula=~1,inherit
 		term$levels <- levels
 		term$factor.names <- factor.names
 		term$covariates <- covariates
+		term$offset <- offsetvalue
 		# Take factors in term, add their contrast matrices to the copy of levels,
 		# and then remove them from the list of term variables,
 		# which now will only contain the covariates of the term;
@@ -491,6 +529,8 @@ testFactorsOnTerm.default <- function(model,term,numeric.predictors,factor.frame
 	
 	# 2. Preliminary definition of the Linear Hypothesis matrix (L)
 	L <- defineLHT(model,term,factor.frame)
+	# (add offset column if available)
+	if (term$offset != 0) L <- cbind(L, term$offset)
 
 	# 3. Transformed Linear Hypothesis (L)
 	if (length(term$factor.names > 0)){
@@ -498,12 +538,17 @@ testFactorsOnTerm.default <- function(model,term,numeric.predictors,factor.frame
 	}else{
 		L <- t(as.matrix(colSums(L)/nrow(L)))
 	}
+	# (and separate offset)
+	if (term$offset != 0){
+		offset_effect <- L[,ncol(L)]
+		L <- L[,-ncol(L), drop=FALSE]
+	}else offset_effect <- 0
 
 	# 4. Result, consisting in:
 	#   levels: numeric matrix values of levels
 	#   adjusted.values: table of adjusted means for the tested interactions
 	#   test: test value, from LinearHypothesis
-	adjusted.values <- L %*% getCoef(model)
+	adjusted.values <- L %*% getCoef(model) + offset_effect
 	result <- list(numeric.variables=paste(term$num.vars,sep=":"),factor.variables=term$fac.vars,hypothesis.matrix=L,adjusted.values=adjusted.values)
 	if (lht) result <- c(result,list(test=try(linearHypothesis(model,L,...),silent=TRUE)))
 	return(result)
@@ -658,10 +703,10 @@ summary.testFactors.mlm <- function(object,predictors=TRUE,matrices=TRUE,...){
 			SSPE.qr <- qr(lht.result$SSPE)
 			eigs <- Re(eigen(qr.coef(SSPE.qr, lht.result$SSPH), symmetric = FALSE)$values)
 			anova.table[term.label,1:4] <- switch(test,
-				"Pillai" = stats:::Pillai(eigs, lht.result$df, lht.result$df.residual),
-				"Wilks" = stats:::Wilks(eigs, lht.result$df, lht.result$df.residual),
-				"Hotelling-Layley" = stats:::HL(eigs, lht.result$df, lht.result$df.residual),
-				"Roy" = stats:::Roy(eigs, lht.result$df, lht.result$df.residual))
+				"Pillai" = stats_Pillai(eigs, lht.result$df, lht.result$df.residual),
+				"Wilks" = stats_Wilks(eigs, lht.result$df, lht.result$df.residual),
+				"Hotelling-Layley" = stats_HL(eigs, lht.result$df, lht.result$df.residual),
+				"Roy" = stats_Roy(eigs, lht.result$df, lht.result$df.residual))
 		}
 	}
 	sobject$adjusted.values <- adjusted.values
