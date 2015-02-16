@@ -12,8 +12,8 @@ Specially suited for the analysis of interaction effects.}
 \tabular{ll}{
 Package: \tab phia\cr
 Type: \tab Package\cr
-Version: \tab 0.1-5\cr
-Date: \tab 2013-10-12\cr
+Version: \tab 0.2-0\cr
+Date: \tab 2015-02-16\cr
 License: \tab GPL (>= 3)\cr
 }
 This package contains functions that may be used for the post-hoc analysis
@@ -28,7 +28,7 @@ means} of factorial designs, and plot main effects or first-order interactions.
 }
 \author{
 Helios De Rosario-Martinez, with code contributions from John Fox (package
-\pkg{car}) and the R Core Team (\code{stats} package).
+\pkg{car}) and the R Core Team (\pkg{stats} package).
 
 Maintainer: Helios De Rosario-Martinez <helios.derosario@gmail.com>
 }
