@@ -1,3 +1,11 @@
+2023-12-03 Helios De Rosario-Martinez <helios.derosario@gmail.com>
+
+* R/testInteractions.R (testInteractions): add SE to tables (ctb. Phil Chalmers)
+
+* R/interactionMeans.R (plot): allow custom text in axis guides and title
+
+* Version 0.3-0
+
 2015-08-18 Helios De Rosario-Martinez <helios.derosario@gmail.com>
 
 * man, R: clarify that std. errors reported in testFactors and interactionMeans

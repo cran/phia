@@ -139,8 +139,8 @@ data=Boik, normalize=TRUE))               # Normalize to homogeinize the scale
 ###################################################
 ### code chunk number 19: phia.Rnw:649-652
 ###################################################
-names(custom.contr$therapy) <- c("cntrl.vs.all", "T1.vs.T2")
-names(custom.contr$medication) <- c("plcb.vs.all", "D1.vs.D3", "D2.vs.avg")
+colnames(custom.contr$therapy) <- c("cntrl.vs.all", "T1.vs.T2")
+colnames(custom.contr$medication) <- c("plcb.vs.all", "D1.vs.D3", "D2.vs.avg")
 testInteractions(mod.boik,custom=custom.contr)
 
 
